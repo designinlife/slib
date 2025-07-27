@@ -3,8 +3,8 @@ package fs_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/designinlife/slib/fs"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTarFromDir(t *testing.T) {

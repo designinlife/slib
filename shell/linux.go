@@ -1,8 +1,8 @@
 //go:build !windows
 
-package sh
+package shell
 
 const (
-	ShellCommandName = "bash"
-	ShellCrossbarArg = "-c"
+	CommandName = "bash"
+	CrossbarArg = "-c"
 )

@@ -1,4 +1,4 @@
-package sh
+package shell
 
 import (
 	"bufio"
@@ -35,7 +35,7 @@ func Run(commands []string) (int, []byte, []byte, error) {
 }
 
 func RunWithContext(ctx context.Context, commands []string, option *RunOption) (int, []byte, []byte, error) {
-	cmd := exec.CommandContext(ctx, ShellCommandName, ShellCrossbarArg, strings.Join(commands, " && "))
+	cmd := exec.CommandContext(ctx, CommandName, CrossbarArg, strings.Join(commands, " && "))
 
 	if len(option.Env) > 0 {
 		cmd.Env = append(os.Environ(), option.Env...)

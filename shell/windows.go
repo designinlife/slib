@@ -1,8 +1,8 @@
 //go:build windows
 
-package sh
+package shell
 
 const (
-	ShellCommandName = "cmd"
-	ShellCrossbarArg = "/C"
+	CommandName = "cmd"
+	CrossbarArg = "/C"
 )

@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/designinlife/slib/string"
+	"github.com/designinlife/slib/str"
 	"github.com/designinlife/slib/types"
 	"golang.org/x/term"
 )
