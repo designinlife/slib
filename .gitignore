@@ -1,0 +1,13 @@
+# Common
+.idea/
+vendor/
+tests/
+*~
+tmp
+*.exe
+.*.swp
+
+# Output
+bin/
+
+# For current project.
