@@ -9,7 +9,7 @@ func New(text string) error {
 	return errors.New(text)
 }
 
-func Newf(format string, args ...any) error {
+func Errorf(format string, args ...any) error {
 	return fmt.Errorf(format, args...)
 }
 

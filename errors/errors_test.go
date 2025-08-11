@@ -21,7 +21,7 @@ func TestSlibErrors(t *testing.T) {
 		t.Errorf("New() got %q, want %q", err1.Error(), "simple error")
 	}
 
-	err2 := errors.Newf("error %d", 42)
+	err2 := errors.Errorf("error %d", 42)
 	if err2.Error() != "error 42" {
 		t.Errorf("Newf() got %q, want %q", err2.Error(), "error 42")
 	}
