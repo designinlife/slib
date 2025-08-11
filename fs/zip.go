@@ -146,7 +146,7 @@ func ZipFromDir(output string, dir string, topDir string) error {
 }
 
 // ZipFromFiles 压缩一个或多个文件。
-// output 是输出的zip文件路径，files 是一个或多个文件路径。(无目录结构)
+// output 是输出的zip文件路径，files 是一个或多个文件路径 (无目录结构)。
 func ZipFromFiles(output string, files ...string) error {
 	outDir := filepath.Dir(output)
 	if !IsDir(outDir) {
@@ -177,7 +177,7 @@ func ZipFromFiles(output string, files ...string) error {
 	return nil
 }
 
-// addFileToZip 辅助函数，用于将单个文件添加到zip写入器中
+// addFileToZip 辅助函数，用于将单个文件添加到zip写入器中。
 func addFileToZip(zipWriter *zip.Writer, file string) error {
 	// 打开文件
 	f, err := os.Open(file)
@@ -219,7 +219,7 @@ func addFileToZip(zipWriter *zip.Writer, file string) error {
 	return nil
 }
 
-// ensureTrailingSlash 确保路径以斜杠结尾，用于目录
+// ensureTrailingSlash 确保路径以斜杠结尾，用于目录。
 func ensureTrailingSlash(path string) string {
 	if path[len(path)-1] == '/' || path[len(path)-1] == '\\' {
 		return path
@@ -227,7 +227,7 @@ func ensureTrailingSlash(path string) string {
 	return path + "/"
 }
 
-// Unzip 解压缩ZIP文件。参数 filename 是zip文件路径；outputDir 是解压缩的目录路径。(当目录不存在时，自动创建)
+// Unzip 解压缩ZIP文件。参数 filename 是zip文件路径；outputDir 是解压缩的目录路径 (当目录不存在时，自动创建)。
 func Unzip(filename string, outputDir string) error {
 	// 打开zip文件
 	reader, err := zip.OpenReader(filename)

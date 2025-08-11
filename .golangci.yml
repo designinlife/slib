@@ -131,11 +131,9 @@ linters:
         - net/http:.*
         - strings:.*
 
-  # staticcheck 配置（一般无需特别配置）
-
-  # goimports（通过 golangci-lint 的 "gofumpt" 或 "goimports" 集成）
-  # 注意：golangci-lint 本身不直接运行 goimports，它只是一个 linter 集合工具
-  # 所以我们通过 "linters" 启用 "goimports" 相关检查，但格式化需在编辑器或 pre-commit 中处理
+  exclusions:
+    paths:
+      - .*_test.go
 
 # 以下是格式化和输出相关设置
 
@@ -202,6 +200,3 @@ formatters:
     goimports:
       local-prefixes:
         - github.com/designinlife/slib
-  exclusions:
-    paths:
-      - pb

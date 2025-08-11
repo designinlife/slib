@@ -1,12 +1,12 @@
 package osutil
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"runtime"
 	"strings"
 
+	"github.com/designinlife/slib/errors"
 	"github.com/designinlife/slib/fs"
 )
 
@@ -43,7 +43,7 @@ func GetMachineID() (string, error) {
 
 	b, err := os.ReadFile(filename)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "GetMachineID os ReadFile %s failed", filename)
 	}
 
 	return strings.TrimSpace(string(b)), nil

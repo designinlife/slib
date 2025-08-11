@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/designinlife/slib/errors"
 	"github.com/designinlife/slib/fs"
 )
 
@@ -61,13 +62,13 @@ func encodeFile(path string, algorithm Algorithm) (string, error) {
 
 	f, err := os.Open(path)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "encodeFile os.Open(%s) failed", path)
 	}
 	defer f.Close()
 
 	h := getHashEncoder(algorithm)
 	if _, err = io.Copy(h, f); err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "encodeFile io.Copy failed")
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
 }

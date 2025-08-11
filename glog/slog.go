@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/designinlife/slib/errors"
 	"github.com/designinlife/slib/str"
 	"github.com/designinlife/slib/types"
 	"golang.org/x/term"
@@ -76,8 +77,11 @@ func (h *textOnlyHandler) Handle(_ context.Context, record slog.Record) error {
 	}
 
 	_, err = fmt.Fprintln(h.w, builder.String())
+	if err != nil {
+		return errors.Wrap(err, "textOnlyHandler Handle Fprintln failed")
+	}
 
-	return err
+	return nil
 }
 
 func (h *textOnlyHandler) WithAttrs(_ []slog.Attr) slog.Handler {

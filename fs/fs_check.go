@@ -6,6 +6,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/designinlife/slib/errors"
 	"github.com/mitchellh/go-homedir"
 )
 
@@ -42,7 +43,7 @@ func SearchFile(name string, dirs []string) (string, error) {
 	for _, v := range dirs {
 		fn, err := homedir.Expand(path.Join(v, name))
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "SearchFile homedir Expand failed")
 		}
 
 		if IsFile(fn) {
@@ -57,7 +58,7 @@ func SearchFile(name string, dirs []string) (string, error) {
 func FileSize(filePath string) (int64, error) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrapf(err, "FileSize %s failed", filePath)
 	}
 
 	return fileInfo.Size(), nil

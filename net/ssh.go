@@ -2,7 +2,6 @@ package net
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -17,6 +16,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/proxy"
 
+	"github.com/designinlife/slib/errors"
 	"github.com/designinlife/slib/glog"
 	"github.com/designinlife/slib/types"
 )
@@ -45,7 +45,7 @@ type SSHTunnel struct {
 func (tunnel *SSHTunnel) Start(opened chan bool) error {
 	listener, err := net.Listen("tcp", tunnel.Local.String())
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "SSHTunnel Start net Listen %s failed", tunnel.Local.String())
 	}
 	defer listener.Close()
 
@@ -60,9 +60,9 @@ func (tunnel *SSHTunnel) Start(opened chan bool) error {
 	opened <- true
 
 	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			return err
+		conn, err1 := listener.Accept()
+		if err1 != nil {
+			return errors.Wrap(err, "SSHTunnel Start net Accept failed")
 		}
 		go tunnel.forward(conn)
 
@@ -83,20 +83,20 @@ func (tunnel *SSHTunnel) forward(localConn net.Conn) {
 	serverConn, err := ssh.Dial("tcp", tunnel.Server.String(), tunnel.Config)
 	if err != nil {
 		// logger.Errorf("[SSHTunnel] Server dial error: %s", err)
-		fmt.Fprintf(os.Stderr, "[SSHTunnel] Server dial error: %s\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "[SSHTunnel] Server dial error: %s\n", err)
 		return
 	}
 
 	remoteConn, err := serverConn.Dial("tcp", tunnel.Remote.String())
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[SSHTunnel] Remote dial error: %s\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "[SSHTunnel] Remote dial error: %s\n", err)
 		return
 	}
 
 	copyConn := func(writer, reader net.Conn) {
 		_, err1 := io.Copy(writer, reader)
 		if err1 != nil {
-			fmt.Fprintf(os.Stderr, "[SSHTunnel] io.Copy error: %s", err1)
+			_, _ = fmt.Fprintf(os.Stderr, "[SSHTunnel] io.Copy error: %s", err1)
 		}
 	}
 
@@ -196,22 +196,22 @@ func newSSHClientWithProxy(proxyAddress, sshServerAddress string, sshConfig *ssh
 	// dialer, err := proxy.SOCKS5("tcp", proxyAddress, nil, proxy.Direct)
 	proxyUrl, err := url.Parse(proxyAddress)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "newSSHClientWithProxy url.Parse %s failed", proxyAddress)
 	}
 
 	dialer, err := proxy.FromURL(proxyUrl, proxy.Direct)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "newSSHClientWithProxy proxy.FromURL %s failed", proxyAddress)
 	}
 
 	conn, err := dialer.Dial("tcp", sshServerAddress)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "newSSHClientWithProxy Dial %s failed", sshServerAddress)
 	}
 
 	c, chans, reqs, err := ssh.NewClientConn(conn, sshServerAddress, sshConfig)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "newSSHClientWithProxy NewClientConn %s failed", sshServerAddress)
 	}
 
 	return ssh.NewClient(c, chans, reqs), nil
@@ -229,17 +229,17 @@ func (s *SSHClient) Connect() error {
 		if strings.HasPrefix(s.PrivateKey, "~/") || strings.HasPrefix(s.PrivateKey, "/") {
 			pkey, err := homedir.Expand(s.PrivateKey)
 			if err != nil {
-				return fmt.Errorf("load private key path error: %w", err)
+				return errors.Wrap(err, "Load private key path failed")
 			}
 
 			key, err = os.ReadFile(pkey)
 			if err != nil {
-				return fmt.Errorf("unable to read private key %s: %w", s.PrivateKey, err)
+				return errors.Wrapf(err, "Unable to read private key %s", s.PrivateKey)
 			}
 		} else {
 			if s.PrivateKey != "" {
 				if len(s.PrivateKey) < 256 {
-					return errors.New("invalid private key string")
+					return errors.New("Invalid private key string")
 				}
 
 				key = []byte(s.PrivateKey)
@@ -253,7 +253,7 @@ func (s *SSHClient) Connect() error {
 		if len(key) > 0 {
 			signer, err = ssh.ParsePrivateKey(key)
 			if err != nil {
-				return fmt.Errorf("ubable to parse private key %s: %w", s.PrivateKey, err)
+				return errors.Wrapf(err, "Ubable to parse private key %s", s.PrivateKey)
 			}
 
 			authMethods = append(authMethods, ssh.PublicKeys(signer))
@@ -296,7 +296,7 @@ func (s *SSHClient) Connect() error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("unable to connect %s:%d: %w", s.Host, s.Port, err)
+			return errors.Wrapf(err, "Unable to connect %s:%d", s.Host, s.Port)
 		}
 
 		if !s.Quiet {
@@ -316,7 +316,10 @@ func (s *SSHClient) Close() error {
 			s.Tunnel.Stop()
 		}
 
-		return s.Client.Close()
+		err := s.Client.Close()
+		if err != nil {
+			return errors.Wrap(err, "SSHClient Close failed")
+		}
 	}
 
 	return nil
@@ -329,12 +332,12 @@ func (s *SSHClient) Run(command string) (int, error) {
 func (s *SSHClient) RunWithWriter(command string, w io.Writer) (int, error) {
 	err := s.Connect()
 	if err != nil {
-		return -1, err
+		return -1, errors.Wrap(err, "SSHClient RunWithWriter Connect failed")
 	}
 
 	session, err := s.Client.NewSession()
 	if err != nil {
-		return -2, err
+		return -2, errors.Wrap(err, "SSHClient RunWithWriter NewSession failed")
 	}
 
 	if s.TTY {
@@ -347,7 +350,7 @@ func (s *SSHClient) RunWithWriter(command string, w io.Writer) (int, error) {
 
 		err = session.RequestPty("xterm", 24, 80, modes)
 		if err != nil {
-			return -2, fmt.Errorf("failed to set tty (%s:%d): %w", s.Host, s.Port, err)
+			return -2, errors.Wrapf(err, "failed to set tty (%s:%d)", s.Host, s.Port)
 		}
 	}
 
@@ -357,7 +360,7 @@ func (s *SSHClient) RunWithWriter(command string, w io.Writer) (int, error) {
 	stdout, _ := session.StdoutPipe()
 
 	if err = session.Start(command); err != nil {
-		return -3, err
+		return -3, errors.Wrap(err, "SSHClient RunWithWriter session Start failed")
 	}
 
 	var scanner *bufio.Scanner
@@ -391,7 +394,7 @@ func (s *SSHClient) RunWithWriter(command string, w io.Writer) (int, error) {
 			// an ExitStatus() method with the same signature.
 			exitstatus := exiterr.ExitStatus()
 
-			return exitstatus, err
+			return exitstatus, errors.Wrapf(err, "SSHClient RunWithWriter Session Wait failed #%d", exitstatus)
 		}
 	}
 
@@ -401,30 +404,30 @@ func (s *SSHClient) RunWithWriter(command string, w io.Writer) (int, error) {
 func (s *SSHClient) Upload(src, dst string) error {
 	err := s.Connect()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "SSHClient Upload Connect failed")
 	}
 
 	sftpClient, err := sftp.NewClient(s.Client)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "SSHClient Upload sftp.NewClient failed")
 	}
 	defer sftpClient.Close()
 
 	dstFile, err := sftpClient.Create(dst)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "SSHClient Upload sftp.Create %s failed", dst)
 	}
 	defer dstFile.Close()
 
 	srcFile, err := os.Open(src)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "SSHClient Upload os.Open %s failed", src)
 	}
 	defer srcFile.Close()
 
 	fileInfo, err := srcFile.Stat()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "SSHClient Upload os.Stat %s failed", src)
 	}
 
 	totalByteCount := fileInfo.Size()
@@ -438,7 +441,7 @@ func (s *SSHClient) Upload(src, dst string) error {
 		n, err1 := srcFile.Read(buf)
 		if err1 != nil {
 			if err1 != io.EOF {
-				return err1
+				return errors.Wrap(err1, "SSHClient Upload srcFile Read EOF")
 			} else {
 				readByteCount = readByteCount + n
 
@@ -473,29 +476,29 @@ func (s *SSHClient) Upload(src, dst string) error {
 func (s *SSHClient) Download(src, dst string) error {
 	err := s.Connect()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "SSHClient Download Connect failed")
 	}
 
 	sftpClient, err := sftp.NewClient(s.Client)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "SSHClient Download sftp.NewClient failed")
 	}
 	defer sftpClient.Close()
 
 	srcFile, err := sftpClient.Open(src)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "SSHClient Download sftp.Open %s failed", src)
 	}
 	defer srcFile.Close()
 
 	srcFileInfo, err := srcFile.Stat()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "SSHClient Download sftp.Stat %s failed", src)
 	}
 
 	dstFile, err := os.Create(dst)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "SSHClient Download os.Create %s failed", dst)
 	}
 	defer dstFile.Close()
 
@@ -512,7 +515,7 @@ func (s *SSHClient) Download(src, dst string) error {
 		n, err1 := srcFile.Read(buf)
 		if err1 != nil {
 			if err1 != io.EOF {
-				return err1
+				return errors.Wrap(err1, "SSHClient Download failed (EOF)")
 			} else {
 				readByteCount = readByteCount + n
 

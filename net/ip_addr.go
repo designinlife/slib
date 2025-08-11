@@ -1,15 +1,16 @@
 package net
 
 import (
-	"errors"
 	"net"
+
+	"github.com/designinlife/slib/errors"
 )
 
 // GetLocalIPAddr 读取本机 IP 地址。
 func GetLocalIPAddr() (string, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to read the IP address of the machine")
 	}
 
 	for _, a := range addrs {

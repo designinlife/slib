@@ -4,14 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"errors"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/designinlife/slib/errors"
 )
 
 type RunOption struct {
@@ -47,16 +47,16 @@ func RunWithContext(ctx context.Context, commands []string, option *RunOption) (
 	if option.LineHandler != nil {
 		stderrPipe, err1 := cmd.StderrPipe()
 		if err1 != nil {
-			return 4, nil, nil, err1
+			return 4, nil, nil, errors.Wrap(err1, "RunWithContext cmd StderrPipe failed")
 		}
 
 		stdoutPipe, err := cmd.StdoutPipe()
 		if err != nil {
-			return 3, nil, nil, err
+			return 3, nil, nil, errors.Wrap(err, "RunWithContext cmd StdoutPipe failed")
 		}
 
 		if err = cmd.Start(); err != nil {
-			return 1, nil, nil, err
+			return 1, nil, nil, errors.Wrap(err, "RunWithContext cmd Start failed")
 		}
 
 		var wg sync.WaitGroup
@@ -92,7 +92,7 @@ func RunWithContext(ctx context.Context, commands []string, option *RunOption) (
 				exitCode = cmd.ProcessState.ExitCode()
 			}
 
-			return exitCode, nil, nil, err
+			return exitCode, nil, nil, errors.Wrapf(err, "RunWithContext cmd Wait failed #%d", exitCode)
 		}
 
 		return 0, nil, nil, nil
@@ -119,7 +119,7 @@ func RunWithContext(ctx context.Context, commands []string, option *RunOption) (
 				exitCode = cmd.ProcessState.ExitCode()
 			}
 
-			return exitCode, bOut.Bytes(), bErr.Bytes(), fmt.Errorf("command: %s, exit: %d: %w", strings.Join(commands, " && "), exitCode, err)
+			return exitCode, bOut.Bytes(), bErr.Bytes(), errors.Wrapf(err, "RunWithContext cmd Run failed #%d", exitCode)
 		}
 
 		return 0, bOut.Bytes(), bErr.Bytes(), nil
