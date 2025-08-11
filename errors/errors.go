@@ -21,6 +21,10 @@ func As(err error, target any) bool {
 	return errors.As(err, target)
 }
 
+func Unwrap(err error) error {
+	return errors.Unwrap(err)
+}
+
 func Wrap(err error, text string) error {
 	if err == nil {
 		return nil

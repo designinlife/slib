@@ -58,4 +58,9 @@ func TestSlibErrors(t *testing.T) {
 	if target.Msg != "custom" {
 		t.Errorf("As() got wrong unwrapped value: %v", target.Msg)
 	}
+
+	unwrapped := errors.Unwrap(wrapped)
+	if unwrapped != baseErr {
+		t.Errorf("Unwrap() got %v, want %v", unwrapped, baseErr)
+	}
 }
