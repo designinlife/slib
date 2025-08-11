@@ -40,13 +40,13 @@ func Substring(str string, start int) string {
 	return str[start:]
 }
 
-func SubstringBetween(str, open, close string) string {
+func SubstringBetween(str, open, substr string) string {
 	start := strings.Index(str, open)
 	if start == -1 {
 		return ""
 	}
 	start += len(open)
-	end := strings.Index(str[start:], close)
+	end := strings.Index(str[start:], substr)
 	if end == -1 {
 		return ""
 	}
