@@ -179,7 +179,7 @@ func NewStdLogger(opts ...StdLoggerOption) types.ExtraLogger {
 	// 配置输出目标
 	var writer io.Writer = os.Stdout
 	if logFile != "" {
-		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 		if err == nil {
 			writer = io.MultiWriter(os.Stdout, file)
 		}

@@ -113,8 +113,11 @@ linters:
     gosec:
       excludes:
         - G101 # Look for hard coded credentials
+        - G104
         - G401 # Detect the usage of MD5 or SHA1
         - G115 # Potential integer overflow when converting between integer types
+        - G501
+        - G505
 
   # errcheck 配置：忽略某些包/函数的错误返回（按需）
     errcheck:
@@ -151,7 +154,7 @@ formatters:
       sections:
         - standard                       # Standard section: captures all standard packages.
         - default                        # Default section: contains all imports that could not be matched to another section type.
-        - prefix(github.com/org/project) # Custom section: groups all imports with the specified Prefix.
+        - prefix(github.com/designinlife/slib) # Custom section: groups all imports with the specified Prefix.
         - blank                          # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
         - dot                            # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
         - alias                          # Alias section: contains all alias imports. This section is not present unless explicitly enabled.
@@ -190,7 +193,7 @@ formatters:
     gofumpt:
       # Module path which contains the source code being formatted.
       # Default: ""
-      module-path: wilderness-gm
+      module-path: github.com/designinlife/slib
 
       # Choose whether to use the extra rules.
       # Default: false
@@ -198,8 +201,7 @@ formatters:
 
     goimports:
       local-prefixes:
-        - wilderness-gm
+        - github.com/designinlife/slib
   exclusions:
     paths:
       - pb
-      - internal/model
