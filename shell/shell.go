@@ -112,7 +112,6 @@ func RunWithContext(ctx context.Context, commands []string, option *RunOption) (
 		cmd.WaitDelay = 1 * time.Second
 
 		err := cmd.Run()
-
 		if err != nil {
 			if errors.As(err, &exitError) {
 				exitCode = exitError.ExitCode()

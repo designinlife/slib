@@ -12,7 +12,6 @@ import (
 // IsFile 检查是否文件？
 func IsFile(filename string) bool {
 	info, err := os.Stat(filename)
-
 	if err != nil {
 		return false
 	}
@@ -27,7 +26,6 @@ func IsFile(filename string) bool {
 // IsDir 检查是否文件夹？
 func IsDir(dirname string) bool {
 	info, err := os.Stat(dirname)
-
 	if err != nil {
 		return false
 	}

@@ -1,0 +1,205 @@
+# .golangci.yml
+
+version: "2"
+
+run:
+  # 默认并发数，通常是 CPU 核心数，可自行调整
+  concurrency: 8
+  # 设置超时时间，默认为 1m
+  timeout: 2m
+  # 检查的目录，默认是 ./...
+  modules-download-mode: readonly
+  go: '1.24'
+
+linters:
+  # Default set of linters.
+  # The value can be:
+  # - `standard`: https://golangci-lint.run/usage/linters/#enabled-by-default
+  # - `all`: enables all linters by default.
+  # - `none`: disables all linters by default.
+  # - `fast`: enables only linters considered as "fast" (`golangci-lint help linters --json | jq '[ .[] | select(.fast==true) ] | map(.name)'`).
+  # Default: standard
+  default: none
+
+  enable:
+    - canonicalheader
+#    - gocognit
+    - godot
+    - gosec
+    - nestif
+    - perfsprint
+    - revive
+    - staticcheck
+    - wrapcheck
+#    - exhaustruct
+#    - gochecknoglobals
+#    - gochecknoinits
+#    - lll
+#    - mnd
+#    - nlreturn
+
+  settings:
+
+    perfsprint:
+      string-format: false
+
+    revive:
+      max-open-files: 2048
+      severity: error
+      enable-all-rules: true
+      rules:
+        - name: add-constant
+          severity: warning
+          disabled: true
+          arguments:
+            - max-lit-count: "3"
+              allow-strs: '""'
+              allow-ints: "0,1,2"
+              allow-floats: "0.0,0.,1.0,1.,2.0,2."
+        - name: package-comments
+          severity: warning
+          disabled: true
+        - name: exported
+          severity: warning
+          disabled: true
+        - name: line-length-limit
+          severity: warning
+          disabled: false
+          arguments: [ 180 ]
+        - name: function-length
+          severity: warning
+          arguments: [ 500, 0 ]
+        - name: unhandled-error
+          severity: error
+          disabled: false
+          exclude: [""]
+          arguments:
+            - "^fmt.Printf"
+            - "bytes.Buffer.WriteString"
+            - "bytes.Buffer.WriteRune"
+            - "bytes.Buffer.WriteByte"
+            - "strings.Builder.WriteString"
+            - "strings.Builder.WriteRune"
+        - name: nested-structs
+          severity: warning
+          disabled: true
+        - name: unused-receiver
+          severity: warning
+          disabled: false
+          exclude: [""]
+          arguments:
+            - allow-regex: "^_"
+        - name: deep-exit
+          severity: warning
+          disabled: true
+        - name: cognitive-complexity
+          severity: warning
+          disabled: true
+          exclude: [""]
+          arguments: [ 50 ] # default value: 7
+        - name: cyclomatic
+          severity: warning
+          disabled: true
+          exclude: [""]
+          arguments: [ 20 ] # default value: 3
+        - name: unused-receiver
+          severity: warning
+          disabled: true
+
+    gocognit:
+      min-complexity: 20 # Minimal code complexity to report. Default: 30 (but we recommend 10-20)
+
+  # gosec 安全检查配置示例（可配置忽略某些规则）
+    gosec:
+      excludes:
+        - G101 # Look for hard coded credentials
+        - G401 # Detect the usage of MD5 or SHA1
+        - G115 # Potential integer overflow when converting between integer types
+
+  # errcheck 配置：忽略某些包/函数的错误返回（按需）
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    # 忽略某些包的错误返回（比如 log 包的打印一般不用处理 err）
+      exclude-functions:
+        - fmt:.*
+        - io:.*
+        - log:.*
+        - net/http:.*
+        - strings:.*
+
+  # staticcheck 配置（一般无需特别配置）
+
+  # goimports（通过 golangci-lint 的 "gofumpt" 或 "goimports" 集成）
+  # 注意：golangci-lint 本身不直接运行 goimports，它只是一个 linter 集合工具
+  # 所以我们通过 "linters" 启用 "goimports" 相关检查，但格式化需在编辑器或 pre-commit 中处理
+
+# 以下是格式化和输出相关设置
+
+formatters:
+  enable:
+    - gofmt
+#    - gofumpt
+    - goimports
+  settings:
+    gci:
+      # Section configuration to compare against.
+      # Section names are case-insensitive and may contain parameters in ().
+      # The default order of sections is `standard > default > custom > blank > dot > alias > localmodule`.
+      # If `custom-order` is `true`, it follows the order of `sections` option.
+      # Default: ["standard", "default"]
+      sections:
+        - standard                       # Standard section: captures all standard packages.
+        - default                        # Default section: contains all imports that could not be matched to another section type.
+        - prefix(github.com/org/project) # Custom section: groups all imports with the specified Prefix.
+        - blank                          # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
+        - dot                            # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
+        - alias                          # Alias section: contains all alias imports. This section is not present unless explicitly enabled.
+        - localmodule                    # Local module section: contains all local packages. This section is not present unless explicitly enabled.
+
+      # Checks that no inline comments are present.
+      # Default: false
+      no-inline-comments: true
+
+      # Checks that no prefix comments (comment lines above an import) are present.
+      # Default: false
+      no-prefix-comments: true
+
+      # Enable custom order of sections.
+      # If `true`, make the section order the same as the order of `sections`.
+      # Default: false
+      custom-order: true
+
+      # Drops lexical ordering for custom sections.
+      # Default: false
+      no-lex-order: true
+
+    gofmt:
+      # Simplify code: gofmt with `-s` option.
+      # Default: true
+      simplify: false
+      # Apply the rewrite rules to the source before reformatting.
+      # https://pkg.go.dev/cmd/gofmt
+      # Default: []
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+        - pattern: 'a[b:len(a)]'
+          replacement: 'a[b:]'
+
+    gofumpt:
+      # Module path which contains the source code being formatted.
+      # Default: ""
+      module-path: wilderness-gm
+
+      # Choose whether to use the extra rules.
+      # Default: false
+      extra-rules: true
+
+    goimports:
+      local-prefixes:
+        - wilderness-gm
+  exclusions:
+    paths:
+      - pb
+      - internal/model

@@ -36,5 +36,5 @@ indent_style = tab
 [*.toml]
 indent_size = 2
 
-[*.yaml]
+[{*.yaml,*.yml}]
 indent_size = 2

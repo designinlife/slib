@@ -195,13 +195,11 @@ func NewSSHClient(host string, port int, user string, privateKey string, quiet b
 func newSSHClientWithProxy(proxyAddress, sshServerAddress string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
 	// dialer, err := proxy.SOCKS5("tcp", proxyAddress, nil, proxy.Direct)
 	proxyUrl, err := url.Parse(proxyAddress)
-
 	if err != nil {
 		return nil, err
 	}
 
 	dialer, err := proxy.FromURL(proxyUrl, proxy.Direct)
-
 	if err != nil {
 		return nil, err
 	}
@@ -230,13 +228,11 @@ func (s *SSHClient) Connect() error {
 
 		if strings.HasPrefix(s.PrivateKey, "~/") || strings.HasPrefix(s.PrivateKey, "/") {
 			pkey, err := homedir.Expand(s.PrivateKey)
-
 			if err != nil {
 				return fmt.Errorf("load private key path error: %w", err)
 			}
 
 			key, err = os.ReadFile(pkey)
-
 			if err != nil {
 				return fmt.Errorf("unable to read private key %s: %w", s.PrivateKey, err)
 			}
@@ -350,7 +346,6 @@ func (s *SSHClient) RunWithWriter(command string, w io.Writer) (int, error) {
 		}
 
 		err = session.RequestPty("xterm", 24, 80, modes)
-
 		if err != nil {
 			return -2, fmt.Errorf("failed to set tty (%s:%d): %w", s.Host, s.Port, err)
 		}
@@ -428,7 +423,6 @@ func (s *SSHClient) Upload(src, dst string) error {
 	defer srcFile.Close()
 
 	fileInfo, err := srcFile.Stat()
-
 	if err != nil {
 		return err
 	}
@@ -495,7 +489,6 @@ func (s *SSHClient) Download(src, dst string) error {
 	defer srcFile.Close()
 
 	srcFileInfo, err := srcFile.Stat()
-
 	if err != nil {
 		return err
 	}

@@ -138,7 +138,6 @@ func ZipFromDir(output string, dir string, topDir string) error {
 
 		return nil
 	})
-
 	if err != nil {
 		return fmt.Errorf("compressing the directory failed: %w", err)
 	}
