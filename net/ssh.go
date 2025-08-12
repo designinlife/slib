@@ -41,18 +41,24 @@ type SSHTunnel struct {
 	exit   chan bool
 }
 
-func (tunnel *SSHTunnel) Start(opened chan bool) error {
+func (tunnel *SSHTunnel) Start(opened chan bool) {
 	listener, err := net.Listen("tcp", tunnel.Local.String())
 	if err != nil {
-		return errors.Wrapf(err, "SSHTunnel Start net Listen %s failed", tunnel.Local.String())
+		glog.Error(errors.Wrapf(err, "SSHTunnel Start net Listen %s failed", tunnel.Local.String()))
+		return
 	}
-	defer listener.Close()
+	defer func() {
+		err1 := listener.Close()
+		if err1 != nil {
+			glog.Error(err1)
+		}
+	}()
 
-	// 若 Local 端口为 0, 则重新读取端口号 ...
 	if tunnel.Local.Port == 0 {
 		addr, ok := listener.Addr().(*net.TCPAddr)
 		if !ok {
-			return errors.New("SSHTunnel Start Get Local Port Failed")
+			glog.Error(errors.New("SSHTunnel Start Get Local Port Failed"))
+			return
 		}
 		tunnel.Local.Port = addr.Port
 	}
@@ -64,18 +70,18 @@ func (tunnel *SSHTunnel) Start(opened chan bool) error {
 	for {
 		conn, err1 := listener.Accept()
 		if err1 != nil {
-			return errors.Wrap(err, "SSHTunnel Start net Accept failed")
+			glog.Fatal(errors.Wrap(err, "SSHTunnel Start net Accept failed"))
 		}
 		go tunnel.forward(conn)
 
 		<-tunnel.exit
+
+		glog.Infof("SSHTunnel %s exited.", tunnel.Local.String())
 	}
 }
 
-func (tunnel *SSHTunnel) Stop() error {
+func (tunnel *SSHTunnel) Stop() {
 	close(tunnel.exit)
-
-	return nil
 }
 
 func (tunnel *SSHTunnel) forward(localConn net.Conn) {
@@ -353,7 +359,12 @@ func (s *SSHClient) RunWithWriter(command string, w io.Writer) (int, error) {
 		}
 	}
 
-	defer session.Close()
+	defer func() {
+		err1 := session.Close()
+		if err1 != nil {
+			glog.Errorf("session.Close() error: %v", err1)
+		}
+	}()
 
 	stderr, _ := session.StderrPipe()
 	stdout, _ := session.StdoutPipe()
@@ -377,7 +388,7 @@ func (s *SSHClient) RunWithWriter(command string, w io.Writer) (int, error) {
 			if s.Logger != nil {
 				s.Logger.Info(m)
 			} else {
-				fmt.Fprintln(os.Stdout, m)
+				_, _ = fmt.Fprintln(os.Stdout, m)
 			}
 		}
 	}
@@ -410,19 +421,34 @@ func (s *SSHClient) Upload(src, dst string) error {
 	if err != nil {
 		return errors.Wrap(err, "SSHClient Upload sftp.NewClient failed")
 	}
-	defer sftpClient.Close()
+	defer func() {
+		err1 := sftpClient.Close()
+		if err1 != nil {
+			glog.Error(err1)
+		}
+	}()
 
 	dstFile, err := sftpClient.Create(dst)
 	if err != nil {
 		return errors.Wrapf(err, "SSHClient Upload sftp.Create %s failed", dst)
 	}
-	defer dstFile.Close()
+	defer func() {
+		err1 := dstFile.Close()
+		if err1 != nil {
+			glog.Error(err1)
+		}
+	}()
 
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return errors.Wrapf(err, "SSHClient Upload os.Open %s failed", src)
 	}
-	defer srcFile.Close()
+	defer func() {
+		err1 := srcFile.Close()
+		if err1 != nil {
+			glog.Error(err1)
+		}
+	}()
 
 	fileInfo, err := srcFile.Stat()
 	if err != nil {
@@ -481,13 +507,23 @@ func (s *SSHClient) Download(src, dst string) error {
 	if err != nil {
 		return errors.Wrap(err, "SSHClient Download sftp.NewClient failed")
 	}
-	defer sftpClient.Close()
+	defer func() {
+		err1 := sftpClient.Close()
+		if err1 != nil {
+			glog.Error(err1)
+		}
+	}()
 
 	srcFile, err := sftpClient.Open(src)
 	if err != nil {
 		return errors.Wrapf(err, "SSHClient Download sftp.Open %s failed", src)
 	}
-	defer srcFile.Close()
+	defer func() {
+		err1 := srcFile.Close()
+		if err1 != nil {
+			glog.Error(err1)
+		}
+	}()
 
 	srcFileInfo, err := srcFile.Stat()
 	if err != nil {
@@ -498,7 +534,12 @@ func (s *SSHClient) Download(src, dst string) error {
 	if err != nil {
 		return errors.Wrapf(err, "SSHClient Download os.Create %s failed", dst)
 	}
-	defer dstFile.Close()
+	defer func() {
+		err1 := dstFile.Close()
+		if err1 != nil {
+			glog.Error(err1)
+		}
+	}()
 
 	totalByteCount := srcFileInfo.Size()
 	readByteCount := 0
