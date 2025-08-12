@@ -18,7 +18,6 @@ import (
 
 	"github.com/designinlife/slib/errors"
 	"github.com/designinlife/slib/glog"
-	"github.com/designinlife/slib/types"
 )
 
 type SSHTunnelEndpoint struct {
@@ -133,7 +132,7 @@ type SSHClient struct {
 	// SSH 隧道
 	Tunnel *SSHTunnel
 	// Logger 接口对象
-	Logger types.Logger
+	Logger glog.Logger
 }
 
 type SSHClientOption func(*SSHClient)
@@ -169,7 +168,7 @@ func SSHOptionWithPassword(password string) SSHClientOption {
 	}
 }
 
-func SSHOptionWithLogger(logger types.Logger) SSHClientOption {
+func SSHOptionWithLogger(logger glog.Logger) SSHClientOption {
 	return func(c *SSHClient) {
 		c.Logger = logger
 	}

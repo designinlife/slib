@@ -12,7 +12,6 @@ import (
 
 	"github.com/designinlife/slib/errors"
 	"github.com/designinlife/slib/str"
-	"github.com/designinlife/slib/types"
 
 	"golang.org/x/term"
 )
@@ -150,7 +149,7 @@ func WithCallerLevel(level int) StdLoggerOption {
 }
 
 // NewStdLogger 创建 slog 的日志实例。
-func NewStdLogger(opts ...StdLoggerOption) types.ExtraLogger {
+func NewStdLogger(opts ...StdLoggerOption) ExtraLogger {
 	// 获取环境变量
 	debugEnabled := str.IsTrue(os.Getenv("DEBUG"))
 	logLevel := os.Getenv("LOG_LEVEL")
@@ -216,99 +215,99 @@ func (l *customSLogger) withSource() *slog.Logger {
 }
 
 // Debug 级别日志。
-func (l *customSLogger) Debug(args ...interface{}) {
+func (l *customSLogger) Debug(args ...any) {
 	l.logger.Debug(fmt.Sprint(args...))
 }
 
-func (l *customSLogger) Debugf(format string, args ...interface{}) {
+func (l *customSLogger) Debugf(format string, args ...any) {
 	l.logger.Debug(fmt.Sprintf(format, args...))
 }
 
-func (l *customSLogger) Debugln(args ...interface{}) {
+func (l *customSLogger) Debugln(args ...any) {
 	l.logger.Debug(fmt.Sprintln(args...))
 }
 
 // Info 级别日志。
-func (l *customSLogger) Info(args ...interface{}) {
+func (l *customSLogger) Info(args ...any) {
 	l.logger.Info(fmt.Sprint(args...))
 }
 
-func (l *customSLogger) Infof(format string, args ...interface{}) {
+func (l *customSLogger) Infof(format string, args ...any) {
 	l.logger.Info(fmt.Sprintf(format, args...))
 }
 
-func (l *customSLogger) Infoln(args ...interface{}) {
+func (l *customSLogger) Infoln(args ...any) {
 	l.logger.Info(fmt.Sprintln(args...))
 }
 
 // Warn Warn/Warning 级别日志 (Warning 作为 Warn 的别名)。
-func (l *customSLogger) Warn(args ...interface{}) {
+func (l *customSLogger) Warn(args ...any) {
 	l.logger.Warn(fmt.Sprint(args...))
 }
 
-func (l *customSLogger) Warnf(format string, args ...interface{}) {
+func (l *customSLogger) Warnf(format string, args ...any) {
 	l.logger.Warn(fmt.Sprintf(format, args...))
 }
 
-func (l *customSLogger) Warnln(args ...interface{}) {
+func (l *customSLogger) Warnln(args ...any) {
 	l.logger.Warn(fmt.Sprintln(args...))
 }
 
-func (l *customSLogger) Warning(args ...interface{}) {
+func (l *customSLogger) Warning(args ...any) {
 	l.Warn(args...)
 }
 
-func (l *customSLogger) Warningf(format string, args ...interface{}) {
+func (l *customSLogger) Warningf(format string, args ...any) {
 	l.Warnf(format, args...)
 }
 
-func (l *customSLogger) Warningln(args ...interface{}) {
+func (l *customSLogger) Warningln(args ...any) {
 	l.Warnln(args...)
 }
 
 // Error 级别日志 (带文件和行号)。
-func (l *customSLogger) Error(args ...interface{}) {
+func (l *customSLogger) Error(args ...any) {
 	l.withSource().Error(fmt.Sprint(args...))
 }
 
-func (l *customSLogger) Errorf(format string, args ...interface{}) {
+func (l *customSLogger) Errorf(format string, args ...any) {
 	l.withSource().Error(fmt.Sprintf(format, args...))
 }
 
-func (l *customSLogger) Errorln(args ...interface{}) {
+func (l *customSLogger) Errorln(args ...any) {
 	l.withSource().Error(fmt.Sprintln(args...))
 }
 
 // Fatal 级别日志 (带文件和行号后退出)。
-func (l *customSLogger) Fatal(args ...interface{}) {
+func (l *customSLogger) Fatal(args ...any) {
 	l.withSource().Error(fmt.Sprint(args...))
 	os.Exit(1)
 }
 
-func (l *customSLogger) Fatalf(format string, args ...interface{}) {
+func (l *customSLogger) Fatalf(format string, args ...any) {
 	l.withSource().Error(fmt.Sprintf(format, args...))
 	os.Exit(1)
 }
 
-func (l *customSLogger) Fatalln(args ...interface{}) {
+func (l *customSLogger) Fatalln(args ...any) {
 	l.withSource().Error(fmt.Sprintln(args...))
 	os.Exit(1)
 }
 
 // Panic 级别日志 (带文件和行号后抛出 panic)。
-func (l *customSLogger) Panic(args ...interface{}) {
+func (l *customSLogger) Panic(args ...any) {
 	msg := fmt.Sprint(args...)
 	l.withSource().Error(msg)
 	panic(msg)
 }
 
-func (l *customSLogger) Panicf(format string, args ...interface{}) {
+func (l *customSLogger) Panicf(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
 	l.withSource().Error(msg)
 	panic(msg)
 }
 
-func (l *customSLogger) Panicln(args ...interface{}) {
+func (l *customSLogger) Panicln(args ...any) {
 	msg := fmt.Sprintln(args...)
 	l.withSource().Error(msg)
 	panic(msg)

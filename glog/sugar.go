@@ -5,8 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/designinlife/slib/types"
-
 	"github.com/spf13/cast"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -51,7 +49,7 @@ func (g *defStdLevelEnabler) Enabled(level zapcore.Level) bool {
 	return false
 }
 
-func initSugaredLogger(opts ...SugarLoggerOption) types.Logger {
+func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	config := &sugarLoggerConfig{}
 
 	for _, opt := range opts {

@@ -1,8 +1,35 @@
 package glog
 
-import "github.com/designinlife/slib/types"
+// Logger 标准日志接口。
+type Logger interface {
+	Debug(args ...any)
+	Debugf(format string, args ...any)
+	Debugln(args ...any)
+	Info(args ...any)
+	Infof(format string, args ...any)
+	Infoln(args ...any)
+	Warn(args ...any)
+	Warnf(format string, args ...any)
+	Warnln(args ...any)
+	Error(args ...any)
+	Errorf(format string, args ...any)
+	Errorln(args ...any)
+	Fatal(args ...any)
+	Fatalf(format string, args ...any)
+	Fatalln(args ...any)
+	Panic(args ...any)
+	Panicf(format string, args ...any)
+	Panicln(args ...any)
+}
 
-var logger types.Logger
+type ExtraLogger interface {
+	Logger
+	Warning(args ...any)
+	Warningf(format string, args ...any)
+	Warningln(args ...any)
+}
+
+var logger Logger
 
 func init() {
 	InitDefaultLogger()

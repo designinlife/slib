@@ -116,6 +116,9 @@ linters:
           disabled: false
           exclude: [ "" ]
           arguments: [ 4 ]
+        - name: confusing-results
+          severity: warning
+          disabled: false
 
     gocognit:
       min-complexity: 20 # Minimal code complexity to report. Default: 30 (but we recommend 10-20)
