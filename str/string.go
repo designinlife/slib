@@ -129,6 +129,9 @@ func Difference(str1, str2 string) string {
 
 // IsNumeric 判断字符串是否为纯数字。
 func IsNumeric(str string) bool {
+	if str == "" {
+		return false
+	}
 	for _, r := range str {
 		if !unicode.IsDigit(r) {
 			return false
