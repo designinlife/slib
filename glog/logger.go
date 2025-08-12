@@ -23,74 +23,74 @@ func InitStdLogger(opts ...StdLoggerOption) {
 	logger = NewStdLogger(opts...)
 }
 
-func Debug(args ...interface{}) {
+func Debug(args ...any) {
 	logger.Debug(args...)
 }
 
-func Info(args ...interface{}) {
+func Info(args ...any) {
 	logger.Info(args...)
 }
 
-func Warn(args ...interface{}) {
+func Warn(args ...any) {
 	logger.Warn(args...)
 }
 
-func Error(args ...interface{}) {
+func Error(args ...any) {
 	logger.Error(args...)
 }
 
-func Panic(args ...interface{}) {
+func Panic(args ...any) {
 	logger.Panic(args...)
 }
 
-func Fatal(args ...interface{}) {
+func Fatal(args ...any) {
 	logger.Fatal(args...)
 }
 
-func Debugf(format string, args ...interface{}) {
+func Debugf(format string, args ...any) {
 	logger.Debugf(format, args...)
 }
 
-func Infof(format string, args ...interface{}) {
+func Infof(format string, args ...any) {
 	logger.Infof(format, args...)
 }
 
-func Warnf(format string, args ...interface{}) {
+func Warnf(format string, args ...any) {
 	logger.Warnf(format, args...)
 }
 
-func Errorf(format string, args ...interface{}) {
+func Errorf(format string, args ...any) {
 	logger.Errorf(format, args...)
 }
 
-func Panicf(format string, args ...interface{}) {
+func Panicf(format string, args ...any) {
 	logger.Panicf(format, args...)
 }
 
-func Fatalf(format string, args ...interface{}) {
+func Fatalf(format string, args ...any) {
 	logger.Fatalf(format, args...)
 }
 
-func Debugln(args ...interface{}) {
+func Debugln(args ...any) {
 	logger.Debugln(args...)
 }
 
-func Infoln(args ...interface{}) {
+func Infoln(args ...any) {
 	logger.Infoln(args...)
 }
 
-func Warnln(args ...interface{}) {
+func Warnln(args ...any) {
 	logger.Warnln(args...)
 }
 
-func Errorln(args ...interface{}) {
+func Errorln(args ...any) {
 	logger.Errorln(args...)
 }
 
-func Panicln(args ...interface{}) {
+func Panicln(args ...any) {
 	logger.Panicln(args...)
 }
 
-func Fatalln(args ...interface{}) {
+func Fatalln(args ...any) {
 	logger.Fatalln(args...)
 }
