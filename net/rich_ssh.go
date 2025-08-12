@@ -154,22 +154,22 @@ func (c *RichSSHClient) Connect(ctx context.Context) error {
 	if c.JumpSSHHost != "" {
 		// connect jump host (may still need proxy)
 		jumpAddr := fmt.Sprintf("%s:%d", c.JumpSSHHost, c.JumpSSHPort)
-		jumpConn, err := dialFunc(ctx, "tcp", jumpAddr)
-		if err != nil {
-			return fmt.Errorf("dial jump host: %w", err)
+		jumpConn, err1 := dialFunc(ctx, "tcp", jumpAddr)
+		if err1 != nil {
+			return fmt.Errorf("dial jump host: %w", err1)
 		}
 		// upgrade to ssh client over jumpConn
-		jumpClientConn, chans, reqs, err := ssh.NewClientConn(jumpConn, jumpAddr, sshConfig)
-		if err != nil {
+		jumpClientConn, chans, reqs, err1 := ssh.NewClientConn(jumpConn, jumpAddr, sshConfig)
+		if err1 != nil {
 			jumpConn.Close()
-			return fmt.Errorf("new client conn to jump host: %w", err)
+			return fmt.Errorf("new client conn to jump host: %w", err1)
 		}
 		c.jumpClient = ssh.NewClient(jumpClientConn, chans, reqs)
 
 		// now from jumpClient, dial target
-		conn, err := c.jumpClient.Dial("tcp", targetAddr)
-		if err != nil {
-			return fmt.Errorf("dial target from jump: %w", err)
+		conn, err1 := c.jumpClient.Dial("tcp", targetAddr)
+		if err1 != nil {
+			return fmt.Errorf("dial target from jump: %w", err1)
 		}
 		baseConn = conn
 	} else {
@@ -210,21 +210,21 @@ func (c *RichSSHClient) netDialContextWithProxy(ctx context.Context, network, ad
 			pw, _ := u.User.Password()
 			auth = &proxy.Auth{User: u.User.Username(), Password: pw}
 		}
-		dialer, err := proxy.SOCKS5("tcp", u.Host, auth, proxy.Direct)
-		if err != nil {
-			return nil, err
+		dialer, err1 := proxy.SOCKS5("tcp", u.Host, auth, proxy.Direct)
+		if err1 != nil {
+			return nil, err1
 		}
-		conn, err := dialer.Dial(network, addr)
-		if err != nil {
-			return nil, err
+		conn, err1 := dialer.Dial(network, addr)
+		if err1 != nil {
+			return nil, err1
 		}
 		return conn, nil
 	case "http", "https":
 		// implement simple HTTP CONNECT
 		d := &net.Dialer{Timeout: c.dialTimeout}
-		proxyConn, err := d.DialContext(ctx, "tcp", u.Host)
-		if err != nil {
-			return nil, err
+		proxyConn, err1 := d.DialContext(ctx, "tcp", u.Host)
+		if err1 != nil {
+			return nil, err1
 		}
 
 		// send CONNECT
@@ -235,16 +235,16 @@ func (c *RichSSHClient) netDialContextWithProxy(ctx context.Context, network, ad
 			req += "Proxy-Authorization: " + auth + "\r\n"
 		}
 		req += "\r\n"
-		if _, err := proxyConn.Write([]byte(req)); err != nil {
+		if _, err2 := proxyConn.Write([]byte(req)); err2 != nil {
 			proxyConn.Close()
-			return nil, err
+			return nil, err2
 		}
 		// read response minimal
 		buf := make([]byte, 1024)
-		n, err := proxyConn.Read(buf)
-		if err != nil {
+		n, err1 := proxyConn.Read(buf)
+		if err1 != nil {
 			proxyConn.Close()
-			return nil, err
+			return nil, err1
 		}
 		resp := string(buf[:n])
 		if !strings.Contains(resp, "200") {
@@ -307,9 +307,9 @@ func (c *RichSSHClient) Run(ctx context.Context, cmd string) (*RichSSHClientResp
 			ssh.TTY_OP_ISPEED: 14400,
 			ssh.TTY_OP_OSPEED: 14400,
 		}
-		if err := sess.RequestPty("xterm", 80, 40, modes); err != nil {
+		if err1 := sess.RequestPty("xterm", 80, 40, modes); err1 != nil {
 			// if PTY request fails, continue without PTY or return? we return error.
-			return nil, fmt.Errorf("request pty: %w", err)
+			return nil, fmt.Errorf("request pty: %w", err1)
 		}
 	}
 
@@ -323,19 +323,19 @@ func (c *RichSSHClient) Run(ctx context.Context, cmd string) (*RichSSHClientResp
 	case <-ctx.Done():
 		_ = sess.Signal(ssh.SIGKILL)
 		return nil, ctx.Err()
-	case err := <-errCh:
+	case err1 := <-errCh:
 		resp := &RichSSHClientResponse{Stdout: outBuf.Bytes(), Stderr: errBuf.Bytes()}
-		if err == nil {
+		if err1 == nil {
 			resp.ExitCode = 0
 			return resp, nil
 		}
 		// try to get exit status
 		var ee *ssh.ExitError
-		if errors.As(err, &ee) {
+		if errors.As(err1, &ee) {
 			resp.ExitCode = ee.ExitStatus()
 			return resp, nil
 		}
-		return resp, err
+		return resp, err1
 	}
 }
 
@@ -353,9 +353,9 @@ func (c *RichSSHClient) RunStream(ctx context.Context, cmd string, outWriter, er
 	// We'll close at the end.
 	if c.EnablePTY {
 		modes := ssh.TerminalModes{ssh.ECHO: 1}
-		if err := sess.RequestPty("xterm", 80, 40, modes); err != nil {
+		if err1 := sess.RequestPty("xterm", 80, 40, modes); err1 != nil {
 			_ = sess.Close()
-			return fmt.Errorf("request pty: %w", err)
+			return fmt.Errorf("request pty: %w", err1)
 		}
 	}
 
@@ -370,16 +370,16 @@ func (c *RichSSHClient) RunStream(ctx context.Context, cmd string, outWriter, er
 		return err
 	}
 
-	if err := sess.Start(cmd); err != nil {
+	if err1 := sess.Start(cmd); err1 != nil {
 		sess.Close()
-		return err
+		return err1
 	}
 
 	copyErrCh := make(chan error, 2)
 	go func() {
 		if outWriter != nil {
-			_, err := io.Copy(outWriter, stdout)
-			copyErrCh <- err
+			_, err1 := io.Copy(outWriter, stdout)
+			copyErrCh <- err1
 		} else {
 			_, _ = io.Copy(io.Discard, stdout)
 			copyErrCh <- nil
@@ -387,8 +387,8 @@ func (c *RichSSHClient) RunStream(ctx context.Context, cmd string, outWriter, er
 	}()
 	go func() {
 		if errWriter != nil {
-			_, err := io.Copy(errWriter, stderr)
-			copyErrCh <- err
+			_, err1 := io.Copy(errWriter, stderr)
+			copyErrCh <- err1
 		} else {
 			_, _ = io.Copy(io.Discard, stderr)
 			copyErrCh <- nil
@@ -405,12 +405,12 @@ func (c *RichSSHClient) RunStream(ctx context.Context, cmd string, outWriter, er
 		_ = sess.Signal(ssh.SIGKILL)
 		_ = sess.Close()
 		return ctx.Err()
-	case err := <-done:
+	case err1 := <-done:
 		// ensure copies finished
 		<-copyErrCh
 		<-copyErrCh
 		_ = sess.Close()
-		return err
+		return err1
 	}
 }
 
@@ -494,7 +494,7 @@ func (c *RichSSHClient) DownloadFile(ctx context.Context, remotePath, localPath 
 	var reader io.Reader = srcFile
 	if progressWriter != nil {
 		var size int64
-		if fi, err := srcFile.Stat(); err == nil {
+		if fi, err1 := srcFile.Stat(); err1 == nil {
 			size = fi.Size()
 		}
 		reader = &progressReader{r: srcFile, total: size, sink: progressWriter}
@@ -525,8 +525,3 @@ func (p *progressReader) Read(b []byte) (int, error) {
 	}
 	return n, err
 }
-
-// small utility guard: to get exit status from Wait error - handled in Run
-
-// Helper: minimal implementation
-// NOTE: replace encodeBase64 placeholder with real base64 in production
