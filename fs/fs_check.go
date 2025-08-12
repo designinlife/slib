@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/designinlife/slib/errors"
+
 	"github.com/mitchellh/go-homedir"
 )
 

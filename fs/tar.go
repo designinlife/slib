@@ -19,7 +19,7 @@ func TarFromDir(output string, dir string, topDir string) error {
 
 	outDir := filepath.Dir(output)
 	if !IsDir(outDir) {
-		err := os.MkdirAll(outDir, 0750)
+		err := os.MkdirAll(outDir, 0o750)
 		if err != nil {
 			return fmt.Errorf("failed to create output directory %s: %w", outDir, err)
 		}

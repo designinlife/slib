@@ -21,12 +21,12 @@ func IsLinux() bool {
 }
 
 // IsMachine 检查机器 ID。
-func IsMachine(machineId string) bool {
+func IsMachine(machineID string) bool {
 	v, err := GetMachineID()
 	if err != nil {
 		return false
 	}
-	return strings.Compare(v, machineId) == 0
+	return strings.Compare(v, machineID) == 0
 }
 
 // GetMachineID 读取 Linux 系统机器 ID。

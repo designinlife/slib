@@ -13,6 +13,7 @@ import (
 	"github.com/designinlife/slib/errors"
 	"github.com/designinlife/slib/str"
 	"github.com/designinlife/slib/types"
+
 	"golang.org/x/term"
 )
 
@@ -204,7 +205,7 @@ func NewStdLogger(opts ...StdLoggerOption) types.ExtraLogger {
 	}
 }
 
-// 添加文件和行号的辅助函数
+// 添加文件和行号的辅助函数。
 func (l *customSLogger) withSource() *slog.Logger {
 	pc, file, line, _ := runtime.Caller(3)
 	return l.logger.With(
@@ -214,7 +215,7 @@ func (l *customSLogger) withSource() *slog.Logger {
 	)
 }
 
-// Debug 级别日志
+// Debug 级别日志。
 func (l *customSLogger) Debug(args ...interface{}) {
 	l.logger.Debug(fmt.Sprint(args...))
 }
@@ -227,7 +228,7 @@ func (l *customSLogger) Debugln(args ...interface{}) {
 	l.logger.Debug(fmt.Sprintln(args...))
 }
 
-// Info 级别日志
+// Info 级别日志。
 func (l *customSLogger) Info(args ...interface{}) {
 	l.logger.Info(fmt.Sprint(args...))
 }
@@ -240,7 +241,7 @@ func (l *customSLogger) Infoln(args ...interface{}) {
 	l.logger.Info(fmt.Sprintln(args...))
 }
 
-// Warn Warn/Warning 级别日志 (Warning 作为 Warn 的别名)
+// Warn Warn/Warning 级别日志 (Warning 作为 Warn 的别名)。
 func (l *customSLogger) Warn(args ...interface{}) {
 	l.logger.Warn(fmt.Sprint(args...))
 }
@@ -265,7 +266,7 @@ func (l *customSLogger) Warningln(args ...interface{}) {
 	l.Warnln(args...)
 }
 
-// Error 级别日志 (带文件和行号)
+// Error 级别日志 (带文件和行号)。
 func (l *customSLogger) Error(args ...interface{}) {
 	l.withSource().Error(fmt.Sprint(args...))
 }
@@ -278,7 +279,7 @@ func (l *customSLogger) Errorln(args ...interface{}) {
 	l.withSource().Error(fmt.Sprintln(args...))
 }
 
-// Fatal 级别日志 (带文件和行号后退出)
+// Fatal 级别日志 (带文件和行号后退出)。
 func (l *customSLogger) Fatal(args ...interface{}) {
 	l.withSource().Error(fmt.Sprint(args...))
 	os.Exit(1)
@@ -294,7 +295,7 @@ func (l *customSLogger) Fatalln(args ...interface{}) {
 	os.Exit(1)
 }
 
-// Panic 级别日志 (带文件和行号后抛出 panic)
+// Panic 级别日志 (带文件和行号后抛出 panic)。
 func (l *customSLogger) Panic(args ...interface{}) {
 	msg := fmt.Sprint(args...)
 	l.withSource().Error(msg)

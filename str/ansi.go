@@ -18,7 +18,6 @@ func StripAnsi(str string) string {
 func AutoStripAnsi(str string) string {
 	if isatty.IsTerminal(os.Stdout.Fd()) {
 		return str
-	} else {
-		return re.ReplaceAllString(str, "")
 	}
+	return re.ReplaceAllString(str, "")
 }

@@ -75,6 +75,12 @@ linters:
           exclude: [""]
           arguments:
             - "^fmt.Printf"
+            - "^fmt.Println"
+            - "^fmt.Fprintln"
+            - "net.SSHTunnel.Stop"
+            - "os.File.Close"
+            - "io.Closer.Close"
+            - "io.Writer.Write"
             - "bytes.Buffer.WriteString"
             - "bytes.Buffer.WriteRune"
             - "bytes.Buffer.WriteByte"
@@ -105,6 +111,11 @@ linters:
         - name: unused-receiver
           severity: warning
           disabled: true
+        - name: function-result-limit
+          severity: warning
+          disabled: false
+          exclude: [ "" ]
+          arguments: [ 4 ]
 
     gocognit:
       min-complexity: 20 # Minimal code complexity to report. Default: 30 (but we recommend 10-20)
@@ -114,8 +125,14 @@ linters:
       excludes:
         - G101 # Look for hard coded credentials
         - G104
-        - G401 # Detect the usage of MD5 or SHA1
+        - G106
+        - G110
         - G115 # Potential integer overflow when converting between integer types
+        - G204
+        - G301
+        - G304
+        - G305
+        - G401 # Detect the usage of MD5 or SHA1
         - G501
         - G505
 

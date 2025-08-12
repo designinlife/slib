@@ -51,7 +51,10 @@ func (tunnel *SSHTunnel) Start(opened chan bool) error {
 
 	// 若 Local 端口为 0, 则重新读取端口号 ...
 	if tunnel.Local.Port == 0 {
-		addr := listener.Addr().(*net.TCPAddr)
+		addr, ok := listener.Addr().(*net.TCPAddr)
+		if !ok {
+			return errors.New("SSHTunnel Start Get Local Port Failed")
+		}
 		tunnel.Local.Port = addr.Port
 	}
 
@@ -66,10 +69,7 @@ func (tunnel *SSHTunnel) Start(opened chan bool) error {
 		}
 		go tunnel.forward(conn)
 
-		select {
-		case <-tunnel.exit:
-			break
-		}
+		<-tunnel.exit
 	}
 }
 
@@ -104,7 +104,7 @@ func (tunnel *SSHTunnel) forward(localConn net.Conn) {
 	go copyConn(remoteConn, localConn)
 }
 
-// SSHClient SSH 客户端
+// SSHClient SSH 客户端。
 type SSHClient struct {
 	// RSA 私钥证书路径或全文内容
 	PrivateKey string
@@ -139,9 +139,9 @@ type SSHClient struct {
 type SSHClientOption func(*SSHClient)
 
 // SSHOptionWithProxy 支持 http/https/socks5/socks5h 代理协议。
-func SSHOptionWithProxy(proxyUrl string) SSHClientOption {
+func SSHOptionWithProxy(proxyURL string) SSHClientOption {
 	return func(c *SSHClient) {
-		c.Proxy = proxyUrl
+		c.Proxy = proxyURL
 	}
 }
 
@@ -194,12 +194,12 @@ func NewSSHClient(host string, port int, user string, privateKey string, quiet b
 
 func newSSHClientWithProxy(proxyAddress, sshServerAddress string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
 	// dialer, err := proxy.SOCKS5("tcp", proxyAddress, nil, proxy.Direct)
-	proxyUrl, err := url.Parse(proxyAddress)
+	proxyURL, err := url.Parse(proxyAddress)
 	if err != nil {
 		return nil, errors.Wrapf(err, "newSSHClientWithProxy url.Parse %s failed", proxyAddress)
 	}
 
-	dialer, err := proxy.FromURL(proxyUrl, proxy.Direct)
+	dialer, err := proxy.FromURL(proxyURL, proxy.Direct)
 	if err != nil {
 		return nil, errors.Wrapf(err, "newSSHClientWithProxy proxy.FromURL %s failed", proxyAddress)
 	}
@@ -218,94 +218,95 @@ func newSSHClientWithProxy(proxyAddress, sshServerAddress string, sshConfig *ssh
 }
 
 func (s *SSHClient) Connect() error {
-	if !s.Connected {
-		if s.PrivateKey == "" && s.Password == "" {
-			return errors.New("at least one of the plaintext password or RSA key must be set")
-		}
-
-		// var hostKey ssh.PublicKey
-		var key []byte
-
-		if strings.HasPrefix(s.PrivateKey, "~/") || strings.HasPrefix(s.PrivateKey, "/") {
-			pkey, err := homedir.Expand(s.PrivateKey)
-			if err != nil {
-				return errors.Wrap(err, "Load private key path failed")
-			}
-
-			key, err = os.ReadFile(pkey)
-			if err != nil {
-				return errors.Wrapf(err, "Unable to read private key %s", s.PrivateKey)
-			}
-		} else {
-			if s.PrivateKey != "" {
-				if len(s.PrivateKey) < 256 {
-					return errors.New("Invalid private key string")
-				}
-
-				key = []byte(s.PrivateKey)
-			}
-		}
-
-		var authMethods []ssh.AuthMethod
-		var err error
-		var signer ssh.Signer
-
-		if len(key) > 0 {
-			signer, err = ssh.ParsePrivateKey(key)
-			if err != nil {
-				return errors.Wrapf(err, "Ubable to parse private key %s", s.PrivateKey)
-			}
-
-			authMethods = append(authMethods, ssh.PublicKeys(signer))
-		} else {
-			if s.Password != "" {
-				authMethods = append(authMethods, ssh.Password(s.Password))
-			}
-		}
-
-		config := &ssh.ClientConfig{
-			User: s.User,
-			Auth: authMethods,
-			// HostKeyCallback: ssh.FixedHostKey(hostKey),
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-			Timeout:         s.Timeout,
-		}
-
-		// 检查 SSH 隧道配置 ...
-		if s.Tunnel != nil {
-			opened := make(chan bool)
-
-			s.Tunnel.Config = config
-
-			go s.Tunnel.Start(opened)
-
-			<-opened
-
-			// 若指定端口为0, 则重新读取本地端口号.
-			if s.Port == 0 {
-				s.Port = s.Tunnel.Local.Port
-			}
-		}
-
-		var client *ssh.Client
-
-		if s.Proxy != "" {
-			client, err = newSSHClientWithProxy(s.Proxy, fmt.Sprintf("%s:%d", s.Host, s.Port), config)
-		} else {
-			client, err = ssh.Dial("tcp", fmt.Sprintf("%s:%d", s.Host, s.Port), config)
-		}
-
-		if err != nil {
-			return errors.Wrapf(err, "Unable to connect %s:%d", s.Host, s.Port)
-		}
-
-		if !s.Quiet {
-			glog.Infof("[SSH] Connected to host %s:%d", s.Host, s.Port)
-		}
-
-		s.Client = client
-		s.Connected = true
+	if s.Connected {
+		return nil
 	}
+	if s.PrivateKey == "" && s.Password == "" {
+		return errors.New("at least one of the plaintext password or RSA key must be set")
+	}
+
+	// var hostKey ssh.PublicKey
+	var key []byte
+
+	if strings.HasPrefix(s.PrivateKey, "~/") || strings.HasPrefix(s.PrivateKey, "/") {
+		pkey, err := homedir.Expand(s.PrivateKey)
+		if err != nil {
+			return errors.Wrap(err, "Load private key path failed")
+		}
+
+		key, err = os.ReadFile(pkey)
+		if err != nil {
+			return errors.Wrapf(err, "Unable to read private key %s", s.PrivateKey)
+		}
+	} else {
+		if s.PrivateKey != "" {
+			if len(s.PrivateKey) < 256 {
+				return errors.New("Invalid private key string")
+			}
+
+			key = []byte(s.PrivateKey)
+		}
+	}
+
+	var authMethods []ssh.AuthMethod
+	var err error
+	var signer ssh.Signer
+
+	if len(key) > 0 {
+		signer, err = ssh.ParsePrivateKey(key)
+		if err != nil {
+			return errors.Wrapf(err, "Ubable to parse private key %s", s.PrivateKey)
+		}
+
+		authMethods = append(authMethods, ssh.PublicKeys(signer))
+	} else {
+		if s.Password != "" {
+			authMethods = append(authMethods, ssh.Password(s.Password))
+		}
+	}
+
+	config := &ssh.ClientConfig{
+		User: s.User,
+		Auth: authMethods,
+		// HostKeyCallback: ssh.FixedHostKey(hostKey),
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         s.Timeout,
+	}
+
+	// 检查 SSH 隧道配置 ...
+	if s.Tunnel != nil {
+		opened := make(chan bool)
+
+		s.Tunnel.Config = config
+
+		go s.Tunnel.Start(opened)
+
+		<-opened
+
+		// 若指定端口为0, 则重新读取本地端口号.
+		if s.Port == 0 {
+			s.Port = s.Tunnel.Local.Port
+		}
+	}
+
+	var client *ssh.Client
+
+	if s.Proxy != "" {
+		client, err = newSSHClientWithProxy(s.Proxy, fmt.Sprintf("%s:%d", s.Host, s.Port), config)
+	} else {
+		client, err = ssh.Dial("tcp", fmt.Sprintf("%s:%d", s.Host, s.Port), config)
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "Unable to connect %s:%d", s.Host, s.Port)
+	}
+
+	if !s.Quiet {
+		glog.Infof("[SSH] Connected to host %s:%d", s.Host, s.Port)
+	}
+
+	s.Client = client
+	s.Connected = true
 
 	return nil
 }
@@ -442,17 +443,16 @@ func (s *SSHClient) Upload(src, dst string) error {
 		if err1 != nil {
 			if err1 != io.EOF {
 				return errors.Wrap(err1, "SSHClient Upload srcFile Read EOF")
-			} else {
-				readByteCount = readByteCount + n
-
-				_, _ = dstFile.Write(buf[:n])
-
-				if isTty && !s.Quiet {
-					fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
-				}
-				// logger.Debugf("readByteCount=%d, n=%d, %v", readByteCount, n, err)
-				break
 			}
+			readByteCount = readByteCount + n
+
+			_, _ = dstFile.Write(buf[:n])
+
+			if isTty && !s.Quiet {
+				fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
+			}
+			// logger.Debugf("readByteCount=%d, n=%d, %v", readByteCount, n, err)
+			break
 		}
 
 		readByteCount = readByteCount + n
@@ -516,17 +516,16 @@ func (s *SSHClient) Download(src, dst string) error {
 		if err1 != nil {
 			if err1 != io.EOF {
 				return errors.Wrap(err1, "SSHClient Download failed (EOF)")
-			} else {
-				readByteCount = readByteCount + n
-
-				_, _ = dstFile.Write(buf[:n])
-
-				if isTty && !s.Quiet {
-					fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
-				}
-				// logger.Debugf("readByteCount=%d, n=%d, %v", readByteCount, n, err)
-				break
 			}
+			readByteCount = readByteCount + n
+
+			_, _ = dstFile.Write(buf[:n])
+
+			if isTty && !s.Quiet {
+				fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
+			}
+			// logger.Debugf("readByteCount=%d, n=%d, %v", readByteCount, n, err)
+			break
 		}
 
 		readByteCount = readByteCount + n
