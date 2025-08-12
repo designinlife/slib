@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/designinlife/slib/errors"
+	"github.com/mitchellh/go-homedir"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/proxy"
@@ -117,7 +118,11 @@ func (c *RichSSHClient) Connect(ctx context.Context) error {
 	}
 
 	if len(c.PrivateKey) == 0 && c.PrivateKeyFile != "" {
-		bPrivKey, err := os.ReadFile(c.PrivateKeyFile)
+		pfn, err := homedir.Expand(c.PrivateKeyFile)
+		if err != nil {
+			return fmt.Errorf("unable to expand private key file path %s: %w", c.PrivateKeyFile, err)
+		}
+		bPrivKey, err := os.ReadFile(pfn)
 		if err != nil {
 			return errors.Wrapf(err, "Unable to read private key %s", c.PrivateKeyFile)
 		}
