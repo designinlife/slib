@@ -11,3 +11,4 @@ tmp
 bin/
 
 # For current project.
+*_test.go
