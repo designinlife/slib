@@ -237,14 +237,13 @@ func (s *SSHClient) Connect() error {
 		if err != nil {
 			return errors.Wrapf(err, "Unable to read private key %s", s.PrivateKey)
 		}
-	} else {
-		if s.PrivateKey != "" {
-			if len(s.PrivateKey) < 256 {
-				return errors.New("Invalid private key string")
-			}
-
-			key = []byte(s.PrivateKey)
+	}
+	if len(key) == 0 {
+		if len(s.PrivateKey) < 256 {
+			return errors.New("Invalid private key string")
 		}
+
+		key = []byte(s.PrivateKey)
 	}
 
 	var authMethods []ssh.AuthMethod
