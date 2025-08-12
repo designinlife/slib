@@ -21,20 +21,26 @@ type RunOption struct {
 	CaptureStderr bool
 }
 
+type CommandResult struct {
+	ExitCode int
+	Stdout   []byte
+	Stderr   []byte
+}
+
 func defaultRunOption() *RunOption {
 	return &RunOption{
 		Quiet: true,
 	}
 }
 
-func Run(commands []string) (int, []byte, []byte, error) {
+func Run(commands []string) (*CommandResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	return RunWithContext(ctx, commands, defaultRunOption())
 }
 
-func RunWithContext(ctx context.Context, commands []string, option *RunOption) (int, []byte, []byte, error) {
+func RunWithContext(ctx context.Context, commands []string, option *RunOption) (*CommandResult, error) {
 	cmd := exec.CommandContext(ctx, CommandName, CrossbarArg, strings.Join(commands, " && "))
 
 	if len(option.Env) > 0 {
@@ -47,16 +53,16 @@ func RunWithContext(ctx context.Context, commands []string, option *RunOption) (
 	if option.LineHandler != nil {
 		stderrPipe, err1 := cmd.StderrPipe()
 		if err1 != nil {
-			return 4, nil, nil, errors.Wrap(err1, "RunWithContext cmd StderrPipe failed")
+			return &CommandResult{ExitCode: 4}, errors.Wrap(err1, "Command StderrPipe failed")
 		}
 
 		stdoutPipe, err := cmd.StdoutPipe()
 		if err != nil {
-			return 3, nil, nil, errors.Wrap(err, "RunWithContext cmd StdoutPipe failed")
+			return &CommandResult{ExitCode: 3}, errors.Wrap(err, "Command StdoutPipe failed")
 		}
 
 		if err = cmd.Start(); err != nil {
-			return 1, nil, nil, errors.Wrap(err, "RunWithContext cmd Start failed")
+			return &CommandResult{ExitCode: 1}, errors.Wrap(err, "Command Start failed")
 		}
 
 		var wg sync.WaitGroup
@@ -92,36 +98,36 @@ func RunWithContext(ctx context.Context, commands []string, option *RunOption) (
 				exitCode = cmd.ProcessState.ExitCode()
 			}
 
-			return exitCode, nil, nil, errors.Wrapf(err, "RunWithContext cmd Wait failed #%d", exitCode)
+			return &CommandResult{ExitCode: exitCode}, errors.Wrapf(err, "cmd Wait failed #%d", exitCode)
 		}
 
-		return 0, nil, nil, nil
-	} else {
-		bOut := bytes.NewBuffer(nil)
-		bErr := bytes.NewBuffer(nil)
-
-		if option.Quiet {
-			cmd.Stdout = bOut
-			cmd.Stderr = bErr
-		} else {
-			cmd.Stdout = io.MultiWriter(os.Stdout, bOut)
-			cmd.Stderr = io.MultiWriter(os.Stderr, bErr)
-		}
-
-		// 解决 Windows 上执行 ping 命令超时不退出的问题。
-		cmd.WaitDelay = 1 * time.Second
-
-		err := cmd.Run()
-		if err != nil {
-			if errors.As(err, &exitError) {
-				exitCode = exitError.ExitCode()
-			} else if err != nil {
-				exitCode = cmd.ProcessState.ExitCode()
-			}
-
-			return exitCode, bOut.Bytes(), bErr.Bytes(), errors.Wrapf(err, "RunWithContext cmd Run failed #%d", exitCode)
-		}
-
-		return 0, bOut.Bytes(), bErr.Bytes(), nil
+		return &CommandResult{}, nil
 	}
+
+	bOut := bytes.NewBuffer(nil)
+	bErr := bytes.NewBuffer(nil)
+
+	if option.Quiet {
+		cmd.Stdout = bOut
+		cmd.Stderr = bErr
+	} else {
+		cmd.Stdout = io.MultiWriter(os.Stdout, bOut)
+		cmd.Stderr = io.MultiWriter(os.Stderr, bErr)
+	}
+
+	// 解决 Windows 上执行 ping 命令超时不退出的问题。
+	cmd.WaitDelay = 1 * time.Second
+
+	err := cmd.Run()
+	if err != nil {
+		if errors.As(err, &exitError) {
+			exitCode = exitError.ExitCode()
+		} else if err != nil {
+			exitCode = cmd.ProcessState.ExitCode()
+		}
+
+		return &CommandResult{ExitCode: exitCode, Stderr: bErr.Bytes(), Stdout: bOut.Bytes()}, errors.Wrapf(err, "cmd Run failed #%d", exitCode)
+	}
+
+	return &CommandResult{Stderr: bErr.Bytes(), Stdout: bOut.Bytes()}, nil
 }
