@@ -15,12 +15,12 @@ import (
 	"time"
 
 	"github.com/designinlife/slib/errors"
+
 	"github.com/mitchellh/go-homedir"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/proxy"
 
-	// optional SFTP; keep so upload/download easier
 	"github.com/pkg/sftp"
 )
 
@@ -106,7 +106,7 @@ func WithDialTimeout(d time.Duration) RichSSHClientOption {
 	}
 }
 
-// Connect establishes SSH connection (handles jump/proxy)
+// Connect establishes SSH connection (handles jump/proxy).
 func (c *RichSSHClient) Connect(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -196,7 +196,7 @@ func (c *RichSSHClient) Connect(ctx context.Context) error {
 	return nil
 }
 
-// netDialContextWithProxy supports socks5:// and http(s):// CONNECT, otherwise direct dial
+// netDialContextWithProxy supports socks5:// and http(s):// CONNECT, otherwise direct dial.
 func (c *RichSSHClient) netDialContextWithProxy(ctx context.Context, network, addr string) (net.Conn, error) {
 	// if no proxy -> normal dial
 	if c.ProxyURL == "" {
@@ -268,7 +268,7 @@ func basicAuth(user, pass string) string {
 	return base64.StdEncoding.EncodeToString([]byte(enc))
 }
 
-// Close closes everything
+// Close closes everything.
 func (c *RichSSHClient) Close() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -290,7 +290,7 @@ func (c *RichSSHClient) Close() {
 	}
 }
 
-// Run executes a command and returns output and exit code
+// Run executes a command and returns output and exit code.
 func (c *RichSSHClient) Run(ctx context.Context, cmd string) (*RichSSHClientResponse, error) {
 	if err := c.Connect(ctx); err != nil {
 		return nil, err
@@ -419,7 +419,7 @@ func (c *RichSSHClient) RunStream(ctx context.Context, cmd string, outWriter, er
 	}
 }
 
-// ensureSFTP initializes sftp client lazily
+// ensureSFTP initializes sftp client lazily.
 func (c *RichSSHClient) ensureSFTP() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()

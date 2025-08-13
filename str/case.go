@@ -11,7 +11,7 @@ func ToPascalCase(s string) string {
 }
 
 // ToCamelCase 转换为驼峰命名形式。
-func ToCamelCase(s string, firstCharUpper bool) string {
+func ToCamelCase(s string, firstUpper bool) string {
 	if s == "" {
 		return s
 	}
@@ -23,7 +23,7 @@ func ToCamelCase(s string, firstCharUpper bool) string {
 		if p == "" {
 			continue
 		}
-		if i == 0 && !firstCharUpper {
+		if i == 0 && !firstUpper {
 			parts[i] = strings.ToLower(p[:1]) + p[1:]
 		} else {
 			parts[i] = strings.ToUpper(p[:1]) + strings.ToLower(p[1:])

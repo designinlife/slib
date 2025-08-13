@@ -76,11 +76,13 @@ linters:
           arguments:
             - "^fmt.Printf"
             - "^fmt.Println"
+            - "^fmt.Fprintf"
             - "^fmt.Fprintln"
             - "net.SSHTunnel.Stop"
             - "os.File.Close"
             - "io.Closer.Close"
             - "io.Writer.Write"
+            - "net.Conn.Close"
             - "bytes.Buffer.WriteString"
             - "bytes.Buffer.WriteRune"
             - "bytes.Buffer.WriteByte"
