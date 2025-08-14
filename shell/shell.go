@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -117,4 +118,47 @@ func Run(ctx context.Context, commands []string, option *CommandOption) (*Comman
 	}
 
 	return &CommandResult{Stderr: bErr.Bytes(), Stdout: bOut.Bytes()}, nil
+}
+
+// WaitForRun 运行命令，并等待命令执行完成。当执行成功时返回标准输出字符串。
+func WaitForRun(commands []string, timeout time.Duration) (string, error) {
+	if len(commands) == 0 {
+		return "", fmt.Errorf("command cannot be empty")
+	}
+
+	cmdStr := strings.Join(commands, " && ")
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	command := exec.CommandContext(ctx, CommandName, CrossbarArg, cmdStr)
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	command.Stdout = &stdoutBuf
+	command.Stderr = &stderrBuf
+
+	err := command.Start()
+	if err != nil {
+		return "", fmt.Errorf("failed to start command '%s': %w", cmdStr, err)
+	}
+
+	err = command.Wait()
+
+	stdoutStr := stdoutBuf.String()
+	stderrStr := stderrBuf.String()
+
+	if err != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return "", fmt.Errorf("command '%s' timed out after %s. Stderr: %s", cmdStr, timeout, stderrStr)
+		}
+
+		var exitErr *exec.ExitError
+		ok := errors.As(err, &exitErr)
+		if ok {
+			return "", fmt.Errorf("command '%s' exited with error: %s. Stderr: %s", cmdStr, exitErr.Error(), stderrStr)
+		}
+		return "", fmt.Errorf("failed to run command '%s': %w. Stderr: %s", cmdStr, err, stderrStr)
+	}
+
+	return strings.TrimSpace(stdoutStr), nil
 }
