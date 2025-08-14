@@ -14,7 +14,7 @@ import (
 	"github.com/designinlife/slib/errors"
 )
 
-type RunOption struct {
+type CommandOption struct {
 	Quiet         bool
 	Env           []string
 	LineHandler   func(line string) error
@@ -27,20 +27,7 @@ type CommandResult struct {
 	Stderr   []byte
 }
 
-func defaultRunOption() *RunOption {
-	return &RunOption{
-		Quiet: true,
-	}
-}
-
-func Run(commands []string) (*CommandResult, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-
-	return RunWithContext(ctx, commands, defaultRunOption())
-}
-
-func RunWithContext(ctx context.Context, commands []string, option *RunOption) (*CommandResult, error) {
+func Run(ctx context.Context, commands []string, option *CommandOption) (*CommandResult, error) {
 	cmd := exec.CommandContext(ctx, CommandName, CrossbarArg, strings.Join(commands, " && "))
 
 	if len(option.Env) > 0 {
