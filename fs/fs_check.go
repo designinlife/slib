@@ -39,6 +39,33 @@ func IsDir(dirname string) bool {
 	return info.IsDir()
 }
 
+// IsDirEmpty An empty directory means it contains no regular files, hidden files, or subdirectories.
+// It returns true if the directory is empty, false otherwise, and an error if there's a problem accessing the directory.
+func IsDirEmpty(dirPath string) (bool, error) {
+	// Check if the path exists and is a directory
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, fmt.Errorf("directory '%s' does not exist", dirPath)
+		}
+		return false, fmt.Errorf("failed to get directory info for '%s': %w", dirPath, err)
+	}
+	if !info.IsDir() {
+		return false, fmt.Errorf("path '%s' is not a directory", dirPath)
+	}
+
+	// Use os.ReadDir to get directory entries.
+	// os.ReadDir returns a slice of fs.DirEntry, which allows checking type
+	// without stat'ing each entry individually.
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return false, fmt.Errorf("failed to read directory '%s': %w", dirPath, err)
+	}
+
+	// If the slice is empty, the directory is empty.
+	return len(entries) == 0, nil
+}
+
 // SearchFile 在 dirs 目录列表中搜索 name 文件。
 func SearchFile(name string, dirs []string) (string, error) {
 	for _, v := range dirs {
