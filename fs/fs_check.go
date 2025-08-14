@@ -25,6 +25,28 @@ func IsFile(filename string) bool {
 	return !info.IsDir()
 }
 
+// IsFileEmpty checks if a given file is empty (has zero bytes).
+// It returns true if the file is empty, false otherwise, and an error if there's
+// a problem accessing the file or if the path is not a regular file.
+func IsFileEmpty(filePath string) (bool, error) {
+	// Get file information using os.Stat
+	info, err := os.Stat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, fmt.Errorf("file '%s' does not exist", filePath)
+		}
+		return false, fmt.Errorf("failed to get file info for '%s': %w", filePath, err)
+	}
+
+	// Ensure the path is a regular file, not a directory or other type
+	if !info.Mode().IsRegular() {
+		return false, fmt.Errorf("path '%s' is not a regular file (it might be a directory, symlink, etc.)", filePath)
+	}
+
+	// A file is empty if its size is 0 bytes
+	return info.Size() == 0, nil
+}
+
 // IsDir 检查是否文件夹？
 func IsDir(dirname string) bool {
 	info, err := os.Stat(dirname)
