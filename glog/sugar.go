@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
+
+	slibos "github.com/designinlife/slib/os"
 )
 
 type sugarLoggerConfig struct {
@@ -96,6 +98,9 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	isDebug := cast.ToBool(os.Getenv("DEBUG"))
 	logLevel := os.Getenv("LOG_LEVEL")
 	logFile := os.Getenv("LOG_FILE")
+	logMaxSize := slibos.GetEnvDefault("LOG_MAX_SIZE", 10)
+	logMaxBackups := slibos.GetEnvDefault("LOG_MAX_BACKUPS", 5)
+	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", 15)
 
 	level := zap.InfoLevel
 	if isDebug {
@@ -120,7 +125,7 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 		// pe3.ConsoleSeparator = " "
 
 		fileEncoder := zapcore.NewJSONEncoder(pe3)
-		cores = append(cores, zapcore.NewCore(fileEncoder, zapcore.AddSync(getLogWriter(logFile)), level))
+		cores = append(cores, zapcore.NewCore(fileEncoder, zapcore.AddSync(getLogWriter(logFile, logMaxSize, logMaxBackups, logMaxAge)), level))
 	}
 
 	cores = append(cores, zapcore.NewCore(consoleEncoder1, zapcore.AddSync(os.Stdout), enabler))
@@ -135,12 +140,12 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	return logger
 }
 
-func getLogWriter(filename string) zapcore.WriteSyncer {
+func getLogWriter(filename string, maxSize, maxBackups, maxAge int) zapcore.WriteSyncer {
 	lumberJackLogger := &lumberjack.Logger{
 		Filename:   filename,
-		MaxSize:    10,
-		MaxBackups: 5,
-		MaxAge:     30,
+		MaxSize:    maxSize,
+		MaxBackups: maxBackups,
+		MaxAge:     maxAge,
 		Compress:   false,
 	}
 	return zapcore.AddSync(lumberJackLogger)
