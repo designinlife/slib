@@ -100,7 +100,7 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	logFile := os.Getenv("LOG_FILE")
 	logMaxSize := slibos.GetEnvDefault("LOG_MAX_SIZE", 10)
 	logMaxBackups := slibos.GetEnvDefault("LOG_MAX_BACKUPS", 5)
-	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", 15)
+	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", 30)
 
 	level := zap.InfoLevel
 	if isDebug {
