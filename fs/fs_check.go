@@ -39,7 +39,7 @@ func IsDir(dirname string) bool {
 	return info.IsDir()
 }
 
-// SearchFile 在若干目录中搜索 name 文件。
+// SearchFile 在 dirs 目录列表中搜索 name 文件。
 func SearchFile(name string, dirs []string) (string, error) {
 	for _, v := range dirs {
 		fn, err := homedir.Expand(path.Join(v, name))
