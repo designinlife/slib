@@ -2,6 +2,7 @@ package os
 
 import (
 	"os"
+	"strings"
 )
 
 func GetEnvDefault[T any](key string, defaultValue T) T {
@@ -10,6 +11,15 @@ func GetEnvDefault[T any](key string, defaultValue T) T {
 		return defaultValue
 	}
 	return To[T](value)
+}
+
+func IsEnvTrue(key string) bool {
+	switch strings.ToLower(os.Getenv(key)) {
+	case "true", "t", "yes", "y", "on":
+		return true
+	default:
+		return false
+	}
 }
 
 func IsEnvEmpty(key string) bool {
