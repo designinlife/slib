@@ -141,18 +141,18 @@ func (s *sugarLogger) Panicln(args ...any) {
 	s.logger.Panicln(args...)
 }
 
-type zapWarnCore struct {
+type zapColorizeCore struct {
 	zapcore.Core
 }
 
-func (z *zapWarnCore) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
+func (z *zapColorizeCore) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
 	// Modify log messages.
 	entry.Message = colorizeZaplog(entry.Level, entry.Message)
 	return z.Core.Check(entry, ce)
 }
 
-func (z *zapWarnCore) With(fields []zapcore.Field) zapcore.Core {
-	return &zapWarnCore{z.Core.With(fields)}
+func (z *zapColorizeCore) With(fields []zapcore.Field) zapcore.Core {
+	return &zapColorizeCore{z.Core.With(fields)}
 }
 
 func newSugarLogger(logger *zap.SugaredLogger) Logger {
@@ -171,7 +171,7 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	pe1.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000")
 	// pe1.EncodeLevel = zapcore.CapitalLevelEncoder
 	pe1.EncodeLevel = func(level zapcore.Level, encoder zapcore.PrimitiveArrayEncoder) {
-		encoder.AppendString(rightPad(level.CapitalString(), 5, ' '))
+		encoder.AppendString(colorizeZaplog(level, rightPad(level.CapitalString(), 5, ' ')))
 	}
 	pe1.EncodeCaller = customEnccodeCaller
 	pe1.ConsoleSeparator = " | "
@@ -250,8 +250,8 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 		cores = append(cores, zapcore.NewCore(fileEncoder, zapcore.AddSync(getLogWriter(logFile, logMaxSize, logMaxBackups, logMaxAge, config.compress)), level))
 	}
 
-	cores = append(cores, zapcore.NewCore(consoleEncoder1, zapcore.AddSync(os.Stdout), enabler))
-	cores = append(cores, &zapWarnCore{zapcore.NewCore(consoleEncoder2, zapcore.AddSync(os.Stdout), zap.WarnLevel)})
+	cores = append(cores, &zapColorizeCore{zapcore.NewCore(consoleEncoder1, zapcore.AddSync(os.Stdout), enabler)})
+	cores = append(cores, &zapColorizeCore{zapcore.NewCore(consoleEncoder2, zapcore.AddSync(os.Stdout), zap.WarnLevel)})
 
 	core := zapcore.NewTee(cores...)
 
