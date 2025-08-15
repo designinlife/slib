@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/designinlife/slib/errors"
 
@@ -150,6 +151,54 @@ func (m *mixedHandler) WithGroup(name string) slog.Handler {
 	return nh
 }
 
+type customJsonHandler struct {
+	h    slog.Handler
+	skip int
+}
+
+func (m *customJsonHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return m.h.Enabled(ctx, level)
+}
+
+func (m *customJsonHandler) Handle(ctx context.Context, r slog.Record) error {
+	return m.h.Handle(ctx, r)
+}
+
+func (m *customJsonHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &customJsonHandler{h: m.h.WithAttrs(attrs), skip: m.skip}
+}
+
+func (m *customJsonHandler) WithGroup(name string) slog.Handler {
+	return &customJsonHandler{h: m.h.WithGroup(name), skip: m.skip}
+}
+
+func (m *customJsonHandler) Log(ctx context.Context, level slog.Level, msg string, attrs ...slog.Attr) {
+	if !m.h.Enabled(ctx, level) {
+		return
+	}
+	var pcs [1]uintptr
+	runtime.Callers(m.skip, pcs[:])
+	rec := slog.NewRecord(time.Now(), level, msg, pcs[0])
+	rec.AddAttrs(attrs...)
+	_ = m.h.Handle(ctx, rec)
+}
+
+func newJSONHandlerWithSkip(w io.Writer, level slog.Level, skip int) *customJsonHandler {
+	h := slog.NewJSONHandler(w, &slog.HandlerOptions{
+		Level:     level,
+		AddSource: false, // 我们自己加 source
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				if t, ok := a.Value.Any().(time.Time); ok {
+					a.Value = slog.StringValue(t.Format("2006-01-02 15:04:05.000"))
+				}
+			}
+			return a
+		},
+	})
+	return &customJsonHandler{h: h, skip: skip}
+}
+
 type customSLogger struct {
 	logger *slog.Logger
 }
@@ -257,7 +306,6 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 	// 配置输出目标
 	var writer io.Writer = os.Stdout
 
-
 	var handler slog.Handler
 
 	if config.Handler != nil {
@@ -271,10 +319,7 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 			MaxAge:     logMaxAge, // days
 			Compress:   config.compress,
 		}
-		jsonHandler := slog.NewJSONHandler(fileWriter, &slog.HandlerOptions{
-			Level:     level,
-			AddSource: true,
-		})
+		jsonHandler := newJSONHandlerWithSkip(fileWriter, level, 3)
 
 		handler = &mixedHandler{
 			handlers: []slog.Handler{consoleHandler, jsonHandler},
