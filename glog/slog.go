@@ -11,7 +11,9 @@ import (
 	"strings"
 
 	"github.com/designinlife/slib/errors"
+
 	slibos "github.com/designinlife/slib/os"
+
 	"golang.org/x/term"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -104,17 +106,62 @@ func (h *textOnlyHandler) trimmedPath(file string) string {
 	return strings.ReplaceAll(filepath.Join(dirName, file[idx+1:]), "\\", "/")
 }
 
+// mixedHandler 同时写入多个 slog.Handler。
+type mixedHandler struct {
+	handlers []slog.Handler
+}
+
+// Enabled 检查所有 handler 是否启用某个 level。
+func (m *mixedHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+// Handle 同时写入所有 handler。
+func (m *mixedHandler) Handle(ctx context.Context, r slog.Record) error {
+	var err error
+	for _, h := range m.handlers {
+		if e := h.Handle(ctx, r); e != nil {
+			err = e
+		}
+	}
+	return err
+}
+
+// WithAttrs 为每个 handler 添加属性。
+func (m *mixedHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	nh := &mixedHandler{}
+	for _, h := range m.handlers {
+		nh.handlers = append(nh.handlers, h.WithAttrs(attrs))
+	}
+	return nh
+}
+
+// WithGroup 为每个 handler 添加分组。
+func (m *mixedHandler) WithGroup(name string) slog.Handler {
+	nh := &mixedHandler{}
+	for _, h := range m.handlers {
+		nh.handlers = append(nh.handlers, h.WithGroup(name))
+	}
+	return nh
+}
+
 type customSLogger struct {
 	logger *slog.Logger
 }
 
 type slogLoggerConfig struct {
-	Handler        slog.Handler
-	UseTextHandler bool
-	UseColor       bool
-	OnlyMessage    bool
-	Level          slog.Level
-	CallerLevel    slog.Level
+	Handler         slog.Handler
+	UseTextHandler  bool
+	UseMixedHandler bool
+	UseColor        bool
+	OnlyMessage     bool
+	Level           slog.Level
+	CallerLevel     slog.Level
 }
 
 type SlogLoggerOption func(*slogLoggerConfig)
@@ -122,6 +169,12 @@ type SlogLoggerOption func(*slogLoggerConfig)
 func WithSlogUseTextHandler() SlogLoggerOption {
 	return func(c *slogLoggerConfig) {
 		c.UseTextHandler = true
+	}
+}
+
+func WithSlogUseMixedHandler() SlogLoggerOption {
+	return func(c *slogLoggerConfig) {
+		c.UseMixedHandler = true
 	}
 }
 
@@ -212,6 +265,23 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 
 	if config.Handler != nil {
 		handler = config.Handler
+	} else if config.UseMixedHandler {
+		consoleHandler := &textOnlyHandler{w: os.Stdout, level: level, cfg: config}
+		fileWriter := &lumberjack.Logger{
+			Filename:   logFile,
+			MaxSize:    logMaxSize, // MB
+			MaxBackups: logMaxBackups,
+			MaxAge:     logMaxAge, // days
+			Compress:   false,
+		}
+		jsonHandler := slog.NewJSONHandler(fileWriter, &slog.HandlerOptions{
+			Level:     level,
+			AddSource: true,
+		})
+
+		handler = &mixedHandler{
+			handlers: []slog.Handler{consoleHandler, jsonHandler},
+		}
 	} else if config.UseTextHandler {
 		handler = &textOnlyHandler{w: writer, level: level, cfg: config}
 	} else {
