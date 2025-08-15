@@ -151,28 +151,28 @@ func (m *mixedHandler) WithGroup(name string) slog.Handler {
 	return nh
 }
 
-type customJsonHandler struct {
+type customJSONHandler struct {
 	h    slog.Handler
 	skip int
 }
 
-func (m *customJsonHandler) Enabled(ctx context.Context, level slog.Level) bool {
+func (m *customJSONHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return m.h.Enabled(ctx, level)
 }
 
-func (m *customJsonHandler) Handle(ctx context.Context, r slog.Record) error {
+func (m *customJSONHandler) Handle(ctx context.Context, r slog.Record) error {
 	return m.h.Handle(ctx, r)
 }
 
-func (m *customJsonHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &customJsonHandler{h: m.h.WithAttrs(attrs), skip: m.skip}
+func (m *customJSONHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &customJSONHandler{h: m.h.WithAttrs(attrs), skip: m.skip}
 }
 
-func (m *customJsonHandler) WithGroup(name string) slog.Handler {
-	return &customJsonHandler{h: m.h.WithGroup(name), skip: m.skip}
+func (m *customJSONHandler) WithGroup(name string) slog.Handler {
+	return &customJSONHandler{h: m.h.WithGroup(name), skip: m.skip}
 }
 
-func (m *customJsonHandler) Log(ctx context.Context, level slog.Level, msg string, attrs ...slog.Attr) {
+func (m *customJSONHandler) Log(ctx context.Context, level slog.Level, msg string, attrs ...slog.Attr) {
 	if !m.h.Enabled(ctx, level) {
 		return
 	}
@@ -183,7 +183,7 @@ func (m *customJsonHandler) Log(ctx context.Context, level slog.Level, msg strin
 	_ = m.h.Handle(ctx, rec)
 }
 
-func newJSONHandlerWithSkip(w io.Writer, level slog.Level, skip int) *customJsonHandler {
+func newJSONHandlerWithSkip(w io.Writer, level slog.Level, skip int) *customJSONHandler {
 	h := slog.NewJSONHandler(w, &slog.HandlerOptions{
 		Level:     level,
 		AddSource: false, // 我们自己加 source
@@ -196,7 +196,7 @@ func newJSONHandlerWithSkip(w io.Writer, level slog.Level, skip int) *customJson
 			return a
 		},
 	})
-	return &customJsonHandler{h: h, skip: skip}
+	return &customJSONHandler{h: h, skip: skip}
 }
 
 type customSLogger struct {
