@@ -186,7 +186,7 @@ func (m *customJSONHandler) Log(ctx context.Context, level slog.Level, msg strin
 func newJSONHandlerWithSkip(w io.Writer, level slog.Level, skip int) *customJSONHandler {
 	h := slog.NewJSONHandler(w, &slog.HandlerOptions{
 		Level:     level,
-		AddSource: false, // 我们自己加 source
+		AddSource: false,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.TimeKey {
 				if t, ok := a.Value.Any().(time.Time); ok {
