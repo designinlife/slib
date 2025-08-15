@@ -256,17 +256,7 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 
 	// 配置输出目标
 	var writer io.Writer = os.Stdout
-	if logFile != "" {
-		fileWriter := &lumberjack.Logger{
-			Filename:   logFile,
-			MaxSize:    logMaxSize, // MB
-			MaxBackups: logMaxBackups,
-			MaxAge:     logMaxAge, // days
-			Compress:   config.compress,
-		}
 
-		writer = io.MultiWriter(os.Stdout, fileWriter)
-	}
 
 	var handler slog.Handler
 
@@ -290,6 +280,17 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 			handlers: []slog.Handler{consoleHandler, jsonHandler},
 		}
 	} else if config.UseTextHandler {
+		if logFile != "" {
+			fileWriter := &lumberjack.Logger{
+				Filename:   logFile,
+				MaxSize:    logMaxSize, // MB
+				MaxBackups: logMaxBackups,
+				MaxAge:     logMaxAge, // days
+				Compress:   config.compress,
+			}
+
+			writer = io.MultiWriter(os.Stdout, fileWriter)
+		}
 		handler = &textOnlyHandler{w: writer, level: level, cfg: config}
 	} else {
 		handler = slog.NewJSONHandler(writer, &slog.HandlerOptions{})
