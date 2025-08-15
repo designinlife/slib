@@ -162,6 +162,7 @@ type slogLoggerConfig struct {
 	OnlyMessage     bool
 	Level           slog.Level
 	CallerLevel     slog.Level
+	compress        bool
 }
 
 type SlogLoggerOption func(*slogLoggerConfig)
@@ -205,6 +206,12 @@ func WithSlogLevel(level slog.Level) SlogLoggerOption {
 func WithSlogCallerLevel(level int) SlogLoggerOption {
 	return func(c *slogLoggerConfig) {
 		c.CallerLevel = slog.Level(level)
+	}
+}
+
+func WithSlogCompress() SlogLoggerOption {
+	return func(c *slogLoggerConfig) {
+		c.compress = true
 	}
 }
 
@@ -255,7 +262,7 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 			MaxSize:    logMaxSize, // MB
 			MaxBackups: logMaxBackups,
 			MaxAge:     logMaxAge, // days
-			Compress:   false,
+			Compress:   config.compress,
 		}
 
 		writer = io.MultiWriter(os.Stdout, fileWriter)
@@ -272,7 +279,7 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 			MaxSize:    logMaxSize, // MB
 			MaxBackups: logMaxBackups,
 			MaxAge:     logMaxAge, // days
-			Compress:   false,
+			Compress:   config.compress,
 		}
 		jsonHandler := slog.NewJSONHandler(fileWriter, &slog.HandlerOptions{
 			Level:     level,

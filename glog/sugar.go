@@ -18,6 +18,7 @@ type sugarLoggerConfig struct {
 	disableLevel  bool
 	disableCaller bool
 	level         zapcore.Level
+	compress      bool
 }
 
 type SugarLoggerOption func(*sugarLoggerConfig)
@@ -43,6 +44,12 @@ func WithSugarDisableCaller() SugarLoggerOption {
 func WithSugarLevel(level zapcore.Level) SugarLoggerOption {
 	return func(c *sugarLoggerConfig) {
 		c.level = level
+	}
+}
+
+func WithSugarCompress() SugarLoggerOption {
+	return func(c *sugarLoggerConfig) {
+		c.compress = true
 	}
 }
 
@@ -226,7 +233,7 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 		// pe3.ConsoleSeparator = " "
 
 		fileEncoder := zapcore.NewJSONEncoder(pe3)
-		cores = append(cores, zapcore.NewCore(fileEncoder, zapcore.AddSync(getLogWriter(logFile, logMaxSize, logMaxBackups, logMaxAge)), level))
+		cores = append(cores, zapcore.NewCore(fileEncoder, zapcore.AddSync(getLogWriter(logFile, logMaxSize, logMaxBackups, logMaxAge, config.compress)), level))
 	}
 
 	cores = append(cores, zapcore.NewCore(consoleEncoder1, zapcore.AddSync(os.Stdout), enabler))
@@ -241,13 +248,13 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	return logger
 }
 
-func getLogWriter(filename string, maxSize, maxBackups, maxAge int) zapcore.WriteSyncer {
+func getLogWriter(filename string, maxSize, maxBackups, maxAge int, compress bool) zapcore.WriteSyncer {
 	lumberJackLogger := &lumberjack.Logger{
 		Filename:   filename,
 		MaxSize:    maxSize,
 		MaxBackups: maxBackups,
 		MaxAge:     maxAge,
-		Compress:   false,
+		Compress:   compress,
 	}
 	return zapcore.AddSync(lumberJackLogger)
 }
