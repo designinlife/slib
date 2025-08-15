@@ -46,11 +46,11 @@ func (h *textOnlyHandler) Handle(_ context.Context, record slog.Record) error {
 		}
 		if h.cfg.UseColor && isTerm {
 			if record.Level >= slog.LevelError {
-				builder.WriteString("\033[1;31m")
+				builder.WriteString("\x1b[1;31m")
 			}
 			builder.WriteString(strings.TrimSpace(record.Message))
 			if record.Level >= slog.LevelError {
-				builder.WriteString("\033[0m")
+				builder.WriteString("\x1b[0m")
 			}
 		} else {
 			builder.WriteString(strings.TrimSpace(record.Message))
@@ -70,12 +70,12 @@ func (h *textOnlyHandler) Handle(_ context.Context, record slog.Record) error {
 			}
 
 			if h.cfg.UseColor && isTerm {
-				builder.WriteString("\033[1;31m")
+				builder.WriteString("\x1b[1;31m")
 			}
 		}
 		builder.WriteString(strings.TrimSpace(record.Message))
 		if h.cfg.UseColor && isTerm && record.Level >= slog.LevelError {
-			builder.WriteString("\033[0m")
+			builder.WriteString("\x1b[0m")
 		}
 	}
 
