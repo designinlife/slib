@@ -51,6 +51,86 @@ func (g *defStdLevelEnabler) Enabled(level zapcore.Level) bool {
 	return false
 }
 
+type sugarLogger struct {
+	logger *zap.SugaredLogger
+}
+
+func (s *sugarLogger) Debug(args ...any) {
+	s.logger.Debug(args...)
+}
+
+func (s *sugarLogger) Debugf(format string, args ...any) {
+	s.logger.Debugf(format, args...)
+}
+
+func (s *sugarLogger) Debugln(args ...any) {
+	s.logger.Debugln(args...)
+}
+
+func (s *sugarLogger) Info(args ...any) {
+	s.logger.Info(args...)
+}
+
+func (s *sugarLogger) Infof(format string, args ...any) {
+	s.logger.Infof(format, args...)
+}
+
+func (s *sugarLogger) Infoln(args ...any) {
+	s.logger.Infoln(args...)
+}
+
+func (s *sugarLogger) Warn(args ...any) {
+	s.logger.Warn(args...)
+}
+
+func (s *sugarLogger) Warnf(format string, args ...any) {
+	s.logger.Warnf(format, args...)
+}
+
+func (s *sugarLogger) Warnln(args ...any) {
+	s.logger.Warnln(args...)
+}
+
+func (s *sugarLogger) Error(args ...any) {
+	s.logger.Error(args...)
+}
+
+func (s *sugarLogger) Errorf(format string, args ...any) {
+	s.logger.Errorf(format, args...)
+}
+
+func (s *sugarLogger) Errorln(args ...any) {
+	s.logger.Errorln(args...)
+}
+
+func (s *sugarLogger) Fatal(args ...any) {
+	s.logger.Fatal(args...)
+}
+
+func (s *sugarLogger) Fatalf(format string, args ...any) {
+	s.logger.Fatalf(format, args...)
+}
+
+func (s *sugarLogger) Fatalln(args ...any) {
+	s.logger.Fatalln(args...)
+}
+
+func (s *sugarLogger) Panic(args ...any) {
+	s.logger.Panic(args...)
+}
+
+func (s *sugarLogger) Panicf(format string, args ...any) {
+	s.logger.Panicf(format, args...)
+}
+
+func (s *sugarLogger) Panicln(args ...any) {
+	s.logger.Panicln(args...)
+}
+
+func newSugarLogger(logger *zap.SugaredLogger) Logger {
+	return &sugarLogger{logger: logger}
+}
+
 func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	config := &sugarLoggerConfig{}
 
@@ -61,7 +141,10 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	pe1 := zap.NewProductionEncoderConfig()
 
 	pe1.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000")
-	pe1.EncodeLevel = zapcore.CapitalLevelEncoder
+	// pe1.EncodeLevel = zapcore.CapitalLevelEncoder
+	pe1.EncodeLevel = func(level zapcore.Level, encoder zapcore.PrimitiveArrayEncoder) {
+		encoder.AppendString(rightPad(level.CapitalString(), 5, ' '))
+	}
 	pe1.EncodeCaller = customEnccodeCaller
 	pe1.ConsoleSeparator = " | "
 
@@ -80,7 +163,10 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 
 	pe2 := zap.NewProductionEncoderConfig()
 	// pe.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000")
-	pe2.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	// pe2.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	pe2.EncodeLevel = func(level zapcore.Level, encoder zapcore.PrimitiveArrayEncoder) {
+		encoder.AppendString(rightPad(level.CapitalString(), 5, ' '))
+	}
 	pe2.ConsoleSeparator = " | "
 	pe2.EncodeCaller = customEnccodeCaller
 
@@ -120,7 +206,10 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	if logFile != "" {
 		pe3 := zap.NewProductionEncoderConfig()
 		pe3.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000")
-		pe3.EncodeLevel = zapcore.CapitalLevelEncoder
+		// pe3.EncodeLevel = zapcore.CapitalLevelEncoder
+		pe3.EncodeLevel = func(level zapcore.Level, encoder zapcore.PrimitiveArrayEncoder) {
+			encoder.AppendString(level.CapitalString())
+		}
 		pe3.EncodeCaller = customEnccodeCaller
 		// pe3.ConsoleSeparator = " "
 
@@ -133,7 +222,7 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 
 	core := zapcore.NewTee(cores...)
 
-	logger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1), zap.AddStacktrace(zap.FatalLevel)).Sugar()
+	logger = newSugarLogger(zap.New(core, zap.AddCaller(), zap.AddCallerSkip(2)).Sugar())
 
 	// logger.Debugf("Zap Logger installed.")
 

@@ -11,4 +11,5 @@ tmp
 bin/
 
 # For current project.
+*.log
 *_test.go

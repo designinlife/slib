@@ -1,5 +1,7 @@
 package glog
 
+import "strings"
+
 // Logger 标准日志接口。
 type Logger interface {
 	Debug(args ...any)
@@ -33,6 +35,23 @@ var logger Logger
 
 func init() {
 	InitDefaultLogger()
+}
+
+func isTrue(s string) bool {
+	switch strings.ToLower(s) {
+	case "true", "t", "yes", "y", "on":
+		return true
+	default:
+		return false
+	}
+}
+
+func rightPad(str string, size int, padChar rune) string {
+	if len(str) >= size {
+		return str
+	}
+	padding := strings.Repeat(string(padChar), size-len(str))
+	return str + padding
 }
 
 // InitDefaultLogger Initialize default Logger.

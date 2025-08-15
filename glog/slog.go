@@ -11,8 +11,6 @@ import (
 	"strings"
 
 	"github.com/designinlife/slib/errors"
-	"github.com/designinlife/slib/str"
-
 	"golang.org/x/term"
 )
 
@@ -53,9 +51,9 @@ func (h *textOnlyHandler) Handle(_ context.Context, record slog.Record) error {
 			builder.WriteString(strings.TrimSpace(record.Message))
 		}
 	} else {
-		builder.WriteString(record.Time.Format("2006-01-02 15:04:05"))
+		builder.WriteString(record.Time.Format("2006-01-02 15:04:05.000"))
 		builder.WriteString(" | ")
-		builder.WriteString(strings.ToUpper(record.Level.String()))
+		builder.WriteString(strings.ToUpper(rightPad(strings.TrimSpace(record.Level.String()), 5, ' ')))
 		builder.WriteString(" | ")
 
 		if record.Level >= h.cfg.CallerLevel {
@@ -118,31 +116,31 @@ type stdLoggerConfig struct {
 
 type StdLoggerOption func(*stdLoggerConfig)
 
-func WithUseTextHandler() StdLoggerOption {
+func WithSlogUseTextHandler() StdLoggerOption {
 	return func(c *stdLoggerConfig) {
 		c.UseTextHandler = true
 	}
 }
 
-func WithUseColor() StdLoggerOption {
+func WithSlogUseColor() StdLoggerOption {
 	return func(c *stdLoggerConfig) {
 		c.UseColor = true
 	}
 }
 
-func WithOnlyMessage() StdLoggerOption {
+func WithSlogOnlyMessage() StdLoggerOption {
 	return func(c *stdLoggerConfig) {
 		c.OnlyMessage = true
 	}
 }
 
-func WithHandler(h slog.Handler) StdLoggerOption {
+func WithSlogHandler(h slog.Handler) StdLoggerOption {
 	return func(c *stdLoggerConfig) {
 		c.Handler = h
 	}
 }
 
-func WithCallerLevel(level int) StdLoggerOption {
+func WithSlogCallerLevel(level int) StdLoggerOption {
 	return func(c *stdLoggerConfig) {
 		c.CallerLevel = slog.Level(level)
 	}
@@ -151,12 +149,12 @@ func WithCallerLevel(level int) StdLoggerOption {
 // NewStdLogger 创建 slog 的日志实例。
 func NewStdLogger(opts ...StdLoggerOption) ExtraLogger {
 	// 获取环境变量
-	debugEnabled := str.IsTrue(os.Getenv("DEBUG"))
+	debugEnabled := isTrue(os.Getenv("DEBUG"))
 	logLevel := os.Getenv("LOG_LEVEL")
 	logFile := os.Getenv("LOG_FILE")
 
 	config := &stdLoggerConfig{
-		CallerLevel: slog.LevelError,
+		CallerLevel: slog.LevelWarn,
 	}
 
 	for _, opt := range opts {
@@ -173,7 +171,7 @@ func NewStdLogger(opts ...StdLoggerOption) ExtraLogger {
 	case "error":
 		level = slog.LevelError
 	default:
-		level = slog.LevelInfo
+		level = slog.LevelDebug
 	}
 	// DEBUG=true 时强制使用 Debug 级别
 	if debugEnabled {
