@@ -11,13 +11,15 @@ import (
 	"strings"
 
 	"github.com/designinlife/slib/errors"
+	slibos "github.com/designinlife/slib/os"
 	"golang.org/x/term"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type textOnlyHandler struct {
 	w     io.Writer
 	level slog.Leveler
-	cfg   *stdLoggerConfig
+	cfg   *slogLoggerConfig
 }
 
 func (h *textOnlyHandler) Enabled(_ context.Context, level slog.Level) bool {
@@ -106,59 +108,73 @@ type customSLogger struct {
 	logger *slog.Logger
 }
 
-type stdLoggerConfig struct {
+type slogLoggerConfig struct {
 	Handler        slog.Handler
 	UseTextHandler bool
 	UseColor       bool
 	OnlyMessage    bool
+	Level          slog.Level
 	CallerLevel    slog.Level
 }
 
-type StdLoggerOption func(*stdLoggerConfig)
+type SlogLoggerOption func(*slogLoggerConfig)
 
-func WithSlogUseTextHandler() StdLoggerOption {
-	return func(c *stdLoggerConfig) {
+func WithSlogUseTextHandler() SlogLoggerOption {
+	return func(c *slogLoggerConfig) {
 		c.UseTextHandler = true
 	}
 }
 
-func WithSlogUseColor() StdLoggerOption {
-	return func(c *stdLoggerConfig) {
+func WithSlogUseColor() SlogLoggerOption {
+	return func(c *slogLoggerConfig) {
 		c.UseColor = true
 	}
 }
 
-func WithSlogOnlyMessage() StdLoggerOption {
-	return func(c *stdLoggerConfig) {
+func WithSlogOnlyMessage() SlogLoggerOption {
+	return func(c *slogLoggerConfig) {
 		c.OnlyMessage = true
 	}
 }
 
-func WithSlogHandler(h slog.Handler) StdLoggerOption {
-	return func(c *stdLoggerConfig) {
+func WithSlogHandler(h slog.Handler) SlogLoggerOption {
+	return func(c *slogLoggerConfig) {
 		c.Handler = h
 	}
 }
 
-func WithSlogCallerLevel(level int) StdLoggerOption {
-	return func(c *stdLoggerConfig) {
+func WithSlogLevel(level slog.Level) SlogLoggerOption {
+	return func(c *slogLoggerConfig) {
+		c.Level = level
+	}
+}
+
+func WithSlogCallerLevel(level int) SlogLoggerOption {
+	return func(c *slogLoggerConfig) {
 		c.CallerLevel = slog.Level(level)
 	}
 }
 
-// NewStdLogger 创建 slog 的日志实例。
-func NewStdLogger(opts ...StdLoggerOption) ExtraLogger {
+// NewSlogLogger 创建 slog 的日志实例。
+func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 	// 获取环境变量
 	debugEnabled := isTrue(os.Getenv("DEBUG"))
 	logLevel := os.Getenv("LOG_LEVEL")
 	logFile := os.Getenv("LOG_FILE")
+	logMaxSize := slibos.GetEnvDefault("LOG_MAX_SIZE", 10)
+	logMaxBackups := slibos.GetEnvDefault("LOG_MAX_BACKUPS", 5)
+	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", 30)
 
-	config := &stdLoggerConfig{
+	config := &slogLoggerConfig{
 		CallerLevel: slog.LevelWarn,
 	}
 
 	for _, opt := range opts {
 		opt(config)
+	}
+
+	if logLevel == "" {
+		logLevel = config.Level.String()
 	}
 
 	// 设置日志级别
@@ -171,7 +187,7 @@ func NewStdLogger(opts ...StdLoggerOption) ExtraLogger {
 	case "error":
 		level = slog.LevelError
 	default:
-		level = slog.LevelDebug
+		level = slog.LevelInfo
 	}
 	// DEBUG=true 时强制使用 Debug 级别
 	if debugEnabled {
@@ -181,10 +197,15 @@ func NewStdLogger(opts ...StdLoggerOption) ExtraLogger {
 	// 配置输出目标
 	var writer io.Writer = os.Stdout
 	if logFile != "" {
-		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-		if err == nil {
-			writer = io.MultiWriter(os.Stdout, file)
+		fileWriter := &lumberjack.Logger{
+			Filename:   logFile,
+			MaxSize:    logMaxSize, // MB
+			MaxBackups: logMaxBackups,
+			MaxAge:     logMaxAge, // days
+			Compress:   false,
 		}
+
+		writer = io.MultiWriter(os.Stdout, fileWriter)
 	}
 
 	var handler slog.Handler

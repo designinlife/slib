@@ -24,13 +24,6 @@ type Logger interface {
 	Panicln(args ...any)
 }
 
-type ExtraLogger interface {
-	Logger
-	Warning(args ...any)
-	Warningf(format string, args ...any)
-	Warningln(args ...any)
-}
-
 var logger Logger
 
 func init() {
@@ -65,8 +58,8 @@ func InitSugarLogger(opts ...SugarLoggerOption) {
 	logger = initSugaredLogger(opts...)
 }
 
-func InitStdLogger(opts ...StdLoggerOption) {
-	logger = NewStdLogger(opts...)
+func InitSlogLogger(opts ...SlogLoggerOption) {
+	logger = NewSlogLogger(opts...)
 }
 
 func Debug(args ...any) {
