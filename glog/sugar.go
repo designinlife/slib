@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/designinlife/slib/str"
 	"github.com/spf13/cast"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -179,7 +180,22 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	// pe.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000")
 	// pe2.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	pe2.EncodeLevel = func(level zapcore.Level, encoder zapcore.PrimitiveArrayEncoder) {
-		encoder.AppendString(rightPad(level.CapitalString(), 5, ' '))
+		var lvStr string
+
+		switch level {
+		case zapcore.DebugLevel:
+			lvStr = str.AutoStripAnsi(fmt.Sprintf("\x1b[1;34m%s\x1b[0m", rightPad(level.CapitalString(), 5, ' ')))
+		case zapcore.InfoLevel:
+			lvStr = str.AutoStripAnsi(fmt.Sprintf("\x1b[1;32m%s\x1b[0m", rightPad(level.CapitalString(), 5, ' ')))
+		case zapcore.WarnLevel:
+			lvStr = str.AutoStripAnsi(fmt.Sprintf("\x1b[1;33m%s\x1b[0m", rightPad(level.CapitalString(), 5, ' ')))
+		case zapcore.ErrorLevel:
+			lvStr = str.AutoStripAnsi(fmt.Sprintf("\x1b[1;31m%s\x1b[0m", rightPad(level.CapitalString(), 5, ' ')))
+		default:
+			lvStr = str.AutoStripAnsi(rightPad(level.CapitalString(), 5, ' '))
+		}
+
+		encoder.AppendString(lvStr)
 	}
 	pe2.ConsoleSeparator = " | "
 	pe2.EncodeCaller = customEnccodeCaller
