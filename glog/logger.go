@@ -1,6 +1,14 @@
 package glog
 
-import "strings"
+import (
+	"fmt"
+	"log/slog"
+	"os"
+	"strings"
+
+	"github.com/mattn/go-isatty"
+	"go.uber.org/zap/zapcore"
+)
 
 // Logger 标准日志接口。
 type Logger interface {
@@ -45,6 +53,44 @@ func rightPad(str string, size int, padChar rune) string {
 	}
 	padding := strings.Repeat(string(padChar), size-len(str))
 	return str + padding
+}
+
+func colorizeSlog(level slog.Level, str string) string {
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		return str
+	}
+
+	switch level {
+	case slog.LevelDebug:
+		return fmt.Sprintf("\x1b[1;34m%s\x1b[0m", str)
+	case slog.LevelInfo:
+		return fmt.Sprintf("\x1b[1;32m%s\x1b[0m", str)
+	case slog.LevelWarn:
+		return fmt.Sprintf("\x1b[1;33m%s\x1b[0m", str)
+	case slog.LevelError:
+		return fmt.Sprintf("\x1b[1;31m%s\x1b[0m", str)
+	default:
+		return str
+	}
+}
+
+func colorizeZaplog(level zapcore.Level, str string) string {
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		return str
+	}
+
+	switch level {
+	case zapcore.DebugLevel:
+		return fmt.Sprintf("\x1b[1;34m%s\x1b[0m", str)
+	case zapcore.InfoLevel:
+		return fmt.Sprintf("\x1b[1;32m%s\x1b[0m", str)
+	case zapcore.WarnLevel:
+		return fmt.Sprintf("\x1b[1;33m%s\x1b[0m", str)
+	case zapcore.ErrorLevel:
+		return fmt.Sprintf("\x1b[1;31m%s\x1b[0m", str)
+	default:
+		return str
+	}
 }
 
 // InitDefaultLogger Initialize default Logger.

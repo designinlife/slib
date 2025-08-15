@@ -15,7 +15,6 @@ import (
 
 	slibos "github.com/designinlife/slib/os"
 
-	"golang.org/x/term"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -33,50 +32,48 @@ func (h *textOnlyHandler) Handle(_ context.Context, record slog.Record) error {
 	var err error
 	var builder strings.Builder
 
-	isTerm := term.IsTerminal(int(os.Stdout.Fd()))
-
 	if h.cfg.OnlyMessage {
 		if record.Level >= h.cfg.CallerLevel {
-			_, file, line, ok := runtime.Caller(5)
+			_, file, line, ok := runtime.Caller(6)
 
 			if ok {
 				fn := h.trimmedPath(file)
 				builder.WriteString(fmt.Sprintf("%s:%d | ", fn, line))
 			}
 		}
-		if h.cfg.UseColor && isTerm {
-			if record.Level >= slog.LevelError {
-				builder.WriteString("\x1b[1;31m")
-			}
-			builder.WriteString(strings.TrimSpace(record.Message))
-			if record.Level >= slog.LevelError {
-				builder.WriteString("\x1b[0m")
-			}
+
+		if h.cfg.UseColor {
+			builder.WriteString(colorizeSlog(record.Level, strings.TrimSpace(record.Message)))
 		} else {
 			builder.WriteString(strings.TrimSpace(record.Message))
 		}
+
+		_, err = fmt.Fprintln(h.w, builder.String())
+		if err != nil {
+			return errors.Wrap(err, "textOnlyHandler Handle Fprintln failed")
+		}
+
+		return nil
+	}
+
+	builder.WriteString(record.Time.Format("2006-01-02 15:04:05.000"))
+	builder.WriteString(" | ")
+	builder.WriteString(colorizeSlog(record.Level, strings.ToUpper(rightPad(strings.TrimSpace(record.Level.String()), 5, ' '))))
+	builder.WriteString(" | ")
+
+	if record.Level >= h.cfg.CallerLevel {
+		_, file, line, ok := runtime.Caller(6)
+
+		if ok {
+			fn := h.trimmedPath(file)
+			builder.WriteString(fmt.Sprintf("%s:%d | ", fn, line))
+		}
+	}
+
+	if h.cfg.UseColor {
+		builder.WriteString(colorizeSlog(record.Level, strings.TrimSpace(record.Message)))
 	} else {
-		builder.WriteString(record.Time.Format("2006-01-02 15:04:05.000"))
-		builder.WriteString(" | ")
-		builder.WriteString(strings.ToUpper(rightPad(strings.TrimSpace(record.Level.String()), 5, ' ')))
-		builder.WriteString(" | ")
-
-		if record.Level >= h.cfg.CallerLevel {
-			_, file, line, ok := runtime.Caller(5)
-
-			if ok {
-				fn := h.trimmedPath(file)
-				builder.WriteString(fmt.Sprintf("%s:%d | ", fn, line))
-			}
-
-			if h.cfg.UseColor && isTerm {
-				builder.WriteString("\x1b[1;31m")
-			}
-		}
 		builder.WriteString(strings.TrimSpace(record.Message))
-		if h.cfg.UseColor && isTerm && record.Level >= slog.LevelError {
-			builder.WriteString("\x1b[0m")
-		}
 	}
 
 	_, err = fmt.Fprintln(h.w, builder.String())
