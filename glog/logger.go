@@ -63,8 +63,6 @@ func colorizeSlog(level slog.Level, str string) string {
 	switch level {
 	case slog.LevelDebug:
 		return fmt.Sprintf("\x1b[1;34m%s\x1b[0m", str)
-	case slog.LevelInfo:
-		return fmt.Sprintf("\x1b[1;32m%s\x1b[0m", str)
 	case slog.LevelWarn:
 		return fmt.Sprintf("\x1b[1;33m%s\x1b[0m", str)
 	case slog.LevelError:
@@ -82,8 +80,6 @@ func colorizeZaplog(level zapcore.Level, str string) string {
 	switch level {
 	case zapcore.DebugLevel:
 		return fmt.Sprintf("\x1b[1;34m%s\x1b[0m", str)
-	case zapcore.InfoLevel:
-		return fmt.Sprintf("\x1b[1;32m%s\x1b[0m", str)
 	case zapcore.WarnLevel:
 		return fmt.Sprintf("\x1b[1;33m%s\x1b[0m", str)
 	case zapcore.ErrorLevel:
