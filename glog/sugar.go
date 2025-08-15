@@ -141,6 +141,20 @@ func (s *sugarLogger) Panicln(args ...any) {
 	s.logger.Panicln(args...)
 }
 
+type zapWarnCore struct {
+	zapcore.Core
+}
+
+func (z *zapWarnCore) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
+	// Modify log messages.
+	entry.Message = colorizeZaplog(entry.Level, entry.Message)
+	return z.Core.Check(entry, ce)
+}
+
+func (z *zapWarnCore) With(fields []zapcore.Field) zapcore.Core {
+	return &zapWarnCore{z.Core.With(fields)}
+}
+
 func newSugarLogger(logger *zap.SugaredLogger) Logger {
 	return &sugarLogger{logger: logger}
 }
@@ -237,14 +251,7 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	}
 
 	cores = append(cores, zapcore.NewCore(consoleEncoder1, zapcore.AddSync(os.Stdout), enabler))
-
-	coreWarn := zapcore.NewCore(consoleEncoder2, zapcore.AddSync(os.Stdout), zap.WarnLevel)
-	coreWarn = zapcore.RegisterHooks(coreWarn, func(entry zapcore.Entry) error {
-		entry.Message = colorizeZaplog(entry.Level, entry.Message)
-		return nil
-	})
-
-	cores = append(cores, coreWarn)
+	cores = append(cores, &zapWarnCore{zapcore.NewCore(consoleEncoder2, zapcore.AddSync(os.Stdout), zap.WarnLevel)})
 
 	core := zapcore.NewTee(cores...)
 
