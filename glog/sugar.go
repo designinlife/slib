@@ -237,7 +237,14 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	}
 
 	cores = append(cores, zapcore.NewCore(consoleEncoder1, zapcore.AddSync(os.Stdout), enabler))
-	cores = append(cores, zapcore.NewCore(consoleEncoder2, zapcore.AddSync(os.Stdout), zap.WarnLevel))
+
+	coreWarn := zapcore.NewCore(consoleEncoder2, zapcore.AddSync(os.Stdout), zap.WarnLevel)
+	coreWarn = zapcore.RegisterHooks(coreWarn, func(entry zapcore.Entry) error {
+		entry.Message = colorizeZaplog(entry.Level, entry.Message)
+		return nil
+	})
+
+	cores = append(cores, coreWarn)
 
 	core := zapcore.NewTee(cores...)
 
