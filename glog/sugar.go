@@ -17,6 +17,7 @@ type sugarLoggerConfig struct {
 	disableTime   bool
 	disableLevel  bool
 	disableCaller bool
+	level         zapcore.Level
 }
 
 type SugarLoggerOption func(*sugarLoggerConfig)
@@ -36,6 +37,12 @@ func WithSugarDisableLevel() SugarLoggerOption {
 func WithSugarDisableCaller() SugarLoggerOption {
 	return func(c *sugarLoggerConfig) {
 		c.disableCaller = true
+	}
+}
+
+func WithSugarLevel(level zapcore.Level) SugarLoggerOption {
+	return func(c *sugarLoggerConfig) {
+		c.level = level
 	}
 }
 
@@ -189,6 +196,11 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", 30)
 
 	level := zap.InfoLevel
+
+	if logLevel == "" {
+		logLevel = config.level.String()
+	}
+
 	if isDebug {
 		level = zap.DebugLevel
 	} else if strings.TrimSpace(logLevel) != "" {
