@@ -19,6 +19,7 @@ type sugarLoggerConfig struct {
 	disableCaller bool
 	level         zapcore.Level
 	compress      bool
+	useAnsiColor  bool
 }
 
 type SugarLoggerOption func(*sugarLoggerConfig)
@@ -50,6 +51,12 @@ func WithSugarLevel(level zapcore.Level) SugarLoggerOption {
 func WithSugarCompress() SugarLoggerOption {
 	return func(c *sugarLoggerConfig) {
 		c.compress = true
+	}
+}
+
+func WithSugarUseAnsiColor() SugarLoggerOption {
+	return func(c *sugarLoggerConfig) {
+		c.useAnsiColor = true
 	}
 }
 
@@ -143,6 +150,7 @@ func (s *sugarLogger) Panicln(args ...any) {
 
 type zapColorizeCore struct {
 	zapcore.Core
+	useAnsiColor bool
 }
 
 func (z *zapColorizeCore) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
@@ -153,11 +161,11 @@ func (z *zapColorizeCore) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *
 }
 
 func (z *zapColorizeCore) With(fields []zapcore.Field) zapcore.Core {
-	return &zapColorizeCore{z.Core.With(fields)}
+	return &zapColorizeCore{Core: z.Core.With(fields)}
 }
 
 func (z *zapColorizeCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
-	ent.Message = colorizeZaplog(ent.Level, ent.Message)
+	ent.Message = colorizeZaplog(z.useAnsiColor, ent.Level, ent.Message)
 
 	return z.Core.Write(ent, fields)
 }
@@ -178,7 +186,7 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	pe1.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000")
 	// pe1.EncodeLevel = zapcore.CapitalLevelEncoder
 	pe1.EncodeLevel = func(level zapcore.Level, encoder zapcore.PrimitiveArrayEncoder) {
-		encoder.AppendString(colorizeZaplog(level, rightPad(level.CapitalString(), 5, ' ')))
+		encoder.AppendString(colorizeZaplog(config.useAnsiColor, level, rightPad(level.CapitalString(), 5, ' ')))
 	}
 	pe1.EncodeCaller = customEnccodeCaller
 	pe1.ConsoleSeparator = " | "
@@ -200,7 +208,7 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	// pe.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000")
 	// pe2.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	pe2.EncodeLevel = func(level zapcore.Level, encoder zapcore.PrimitiveArrayEncoder) {
-		encoder.AppendString(colorizeZaplog(level, rightPad(level.CapitalString(), 5, ' ')))
+		encoder.AppendString(colorizeZaplog(config.useAnsiColor, level, rightPad(level.CapitalString(), 5, ' ')))
 	}
 	pe2.ConsoleSeparator = " | "
 	pe2.EncodeCaller = customEnccodeCaller
@@ -257,8 +265,8 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 		cores = append(cores, zapcore.NewCore(fileEncoder, zapcore.AddSync(getLogWriter(logFile, logMaxSize, logMaxBackups, logMaxAge, config.compress)), level))
 	}
 
-	cores = append(cores, &zapColorizeCore{zapcore.NewCore(consoleEncoder1, zapcore.AddSync(os.Stdout), enabler)})
-	cores = append(cores, &zapColorizeCore{zapcore.NewCore(consoleEncoder2, zapcore.AddSync(os.Stdout), zap.WarnLevel)})
+	cores = append(cores, &zapColorizeCore{zapcore.NewCore(consoleEncoder1, zapcore.AddSync(os.Stdout), enabler), config.useAnsiColor})
+	cores = append(cores, &zapColorizeCore{zapcore.NewCore(consoleEncoder2, zapcore.AddSync(os.Stdout), zap.WarnLevel), config.useAnsiColor})
 
 	core := zapcore.NewTee(cores...)
 

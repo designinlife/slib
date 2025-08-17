@@ -72,7 +72,10 @@ func colorizeSlog(level slog.Level, str string) string {
 	}
 }
 
-func colorizeZaplog(level zapcore.Level, str string) string {
+func colorizeZaplog(enable bool, level zapcore.Level, str string) string {
+	if !enable {
+		return str
+	}
 	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		return str
 	}
