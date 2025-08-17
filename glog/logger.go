@@ -10,6 +10,12 @@ import (
 	"golang.org/x/term"
 )
 
+const (
+	DefaultLogMaxSize    = 10
+	DefaultLogMaxBackups = 5
+	DefaultLogMaxAge     = 30
+)
+
 // Logger 标准日志接口。
 type Logger interface {
 	Debug(args ...any)

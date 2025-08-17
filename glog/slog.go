@@ -245,11 +245,12 @@ func WithSlogCompress() SlogLoggerOption {
 func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 	// 获取环境变量
 	debugEnabled := isTrue(os.Getenv("DEBUG"))
+	isAnsiColor := isTrue(os.Getenv("LOG_COLOR"))
 	logLevel := os.Getenv("LOG_LEVEL")
 	logFile := os.Getenv("LOG_FILE")
-	logMaxSize := slibos.GetEnvDefault("LOG_MAX_SIZE", 10)
-	logMaxBackups := slibos.GetEnvDefault("LOG_MAX_BACKUPS", 5)
-	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", 30)
+	logMaxSize := slibos.GetEnvDefault("LOG_MAX_SIZE", DefaultLogMaxSize)
+	logMaxBackups := slibos.GetEnvDefault("LOG_MAX_BACKUPS", DefaultLogMaxBackups)
+	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", DefaultLogMaxAge)
 
 	config := &slogLoggerConfig{
 		CallerLevel: slog.LevelWarn,
@@ -257,6 +258,10 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 
 	for _, opt := range opts {
 		opt(config)
+	}
+
+	if isAnsiColor {
+		config.UseColor = true
 	}
 
 	if logLevel == "" {

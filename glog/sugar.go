@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cast"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -181,6 +180,18 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 		opt(config)
 	}
 
+	isDebug := isTrue(os.Getenv("DEBUG"))
+	isAnsiColor := isTrue(os.Getenv("LOG_COLOR"))
+	logLevel := os.Getenv("LOG_LEVEL")
+	logFile := os.Getenv("LOG_FILE")
+	logMaxSize := slibos.GetEnvDefault("LOG_MAX_SIZE", DefaultLogMaxSize)
+	logMaxBackups := slibos.GetEnvDefault("LOG_MAX_BACKUPS", DefaultLogMaxBackups)
+	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", DefaultLogMaxAge)
+
+	if isAnsiColor {
+		config.useAnsiColor = true
+	}
+
 	pe1 := zap.NewProductionEncoderConfig()
 
 	pe1.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000")
@@ -223,13 +234,6 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	// fileEncoder := zapcore.NewJSONEncoder(pe)
 	consoleEncoder1 := zapcore.NewConsoleEncoder(pe1)
 	consoleEncoder2 := zapcore.NewConsoleEncoder(pe2)
-
-	isDebug := cast.ToBool(os.Getenv("DEBUG"))
-	logLevel := os.Getenv("LOG_LEVEL")
-	logFile := os.Getenv("LOG_FILE")
-	logMaxSize := slibos.GetEnvDefault("LOG_MAX_SIZE", 10)
-	logMaxBackups := slibos.GetEnvDefault("LOG_MAX_BACKUPS", 5)
-	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", 30)
 
 	level := zap.InfoLevel
 
