@@ -260,8 +260,8 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 		config.onlyMessage = true
 	}
 
-	if isAnsiColor {
-		config.useAnsiColor = true
+	if os.Getenv("LOG_COLOR") != "" {
+		config.useAnsiColor = isAnsiColor
 	}
 
 	if config.useMixedHandler && logFile == "" {

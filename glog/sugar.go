@@ -188,8 +188,8 @@ func initSugaredLogger(opts ...SugarLoggerOption) Logger {
 	logMaxBackups := slibos.GetEnvDefault("LOG_MAX_BACKUPS", DefaultLogMaxBackups)
 	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", DefaultLogMaxAge)
 
-	if isAnsiColor {
-		config.useAnsiColor = true
+	if os.Getenv("LOG_COLOR") != "" {
+		config.useAnsiColor = isAnsiColor
 	}
 
 	pe1 := zap.NewProductionEncoderConfig()
