@@ -146,13 +146,20 @@ type zapColorizeCore struct {
 }
 
 func (z *zapColorizeCore) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
-	// Modify log messages.
-	entry.Message = colorizeZaplog(entry.Level, entry.Message)
-	return z.Core.Check(entry, ce)
+	if z.Enabled(entry.Level) {
+		return ce.AddCore(entry, z)
+	}
+	return ce
 }
 
 func (z *zapColorizeCore) With(fields []zapcore.Field) zapcore.Core {
 	return &zapColorizeCore{z.Core.With(fields)}
+}
+
+func (z *zapColorizeCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
+	ent.Message = colorizeZaplog(ent.Level, ent.Message)
+
+	return z.Core.Write(ent, fields)
 }
 
 func newSugarLogger(logger *zap.SugaredLogger) Logger {
