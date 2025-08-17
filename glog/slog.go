@@ -264,6 +264,10 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 		config.useAnsiColor = true
 	}
 
+	if config.useMixedHandler && logFile == "" {
+		config.useMixedHandler = false
+	}
+
 	if logLevel == "" {
 		logLevel = config.level.String()
 	}
