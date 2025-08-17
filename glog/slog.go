@@ -37,7 +37,7 @@ func (h *textOnlyHandler) Handle(_ context.Context, record slog.Record) error {
 		builder.WriteString(" | ")
 	}
 
-	builder.WriteString(colorizeSlog(record.Level, strings.ToUpper(rightPad(strings.TrimSpace(record.Level.String()), 5, ' '))))
+	builder.WriteString(colorizeSlog(h.cfg.UseColor, record.Level, strings.ToUpper(rightPad(strings.TrimSpace(record.Level.String()), 5, ' '))))
 	builder.WriteString(" | ")
 
 	if record.Level >= h.cfg.CallerLevel {
@@ -49,11 +49,7 @@ func (h *textOnlyHandler) Handle(_ context.Context, record slog.Record) error {
 		}
 	}
 
-	if h.cfg.UseColor {
-		builder.WriteString(colorizeSlog(record.Level, strings.TrimSpace(record.Message)))
-	} else {
-		builder.WriteString(strings.TrimSpace(record.Message))
-	}
+	builder.WriteString(colorizeSlog(h.cfg.UseColor, record.Level, strings.TrimSpace(record.Message)))
 
 	_, err = fmt.Fprintln(h.w, builder.String())
 	if err != nil {

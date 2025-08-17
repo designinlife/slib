@@ -61,7 +61,10 @@ func rightPad(str string, size int, padChar rune) string {
 	return str + padding
 }
 
-func colorizeSlog(level slog.Level, str string) string {
+func colorizeSlog(enable bool, level slog.Level, str string) string {
+	if !enable {
+		return str
+	}
 	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		return str
 	}
