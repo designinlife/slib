@@ -32,15 +32,15 @@ func (h *textOnlyHandler) Handle(_ context.Context, record slog.Record) error {
 	var err error
 	var builder strings.Builder
 
-	if !h.cfg.OnlyMessage {
+	if !h.cfg.onlyMessage {
 		builder.WriteString(record.Time.Format("2006-01-02 15:04:05.000"))
 		builder.WriteString(" | ")
 	}
 
-	builder.WriteString(colorizeSlog(h.cfg.UseColor, record.Level, strings.ToUpper(rightPad(strings.TrimSpace(record.Level.String()), 5, ' '))))
+	builder.WriteString(colorizeSlog(h.cfg.useAnsiColor, record.Level, strings.ToUpper(rightPad(strings.TrimSpace(record.Level.String()), 5, ' '))))
 	builder.WriteString(" | ")
 
-	if record.Level >= h.cfg.CallerLevel {
+	if record.Level >= h.cfg.callerLevel {
 		_, file, line, ok := runtime.Caller(6)
 
 		if ok {
@@ -49,7 +49,7 @@ func (h *textOnlyHandler) Handle(_ context.Context, record slog.Record) error {
 		}
 	}
 
-	builder.WriteString(colorizeSlog(h.cfg.UseColor, record.Level, strings.TrimSpace(record.Message)))
+	builder.WriteString(colorizeSlog(h.cfg.useAnsiColor, record.Level, strings.TrimSpace(record.Message)))
 
 	_, err = fmt.Fprintln(h.w, builder.String())
 	if err != nil {
@@ -178,12 +178,12 @@ type customSLogger struct {
 
 type slogLoggerConfig struct {
 	Handler         slog.Handler
-	UseTextHandler  bool
-	UseMixedHandler bool
-	UseColor        bool
-	OnlyMessage     bool
-	Level           slog.Level
-	CallerLevel     slog.Level
+	useTextHandler  bool
+	useMixedHandler bool
+	useAnsiColor    bool
+	onlyMessage     bool
+	level           slog.Level
+	callerLevel     slog.Level
 	compress        bool
 }
 
@@ -191,25 +191,25 @@ type SlogLoggerOption func(*slogLoggerConfig)
 
 func WithSlogUseTextHandler() SlogLoggerOption {
 	return func(c *slogLoggerConfig) {
-		c.UseTextHandler = true
+		c.useTextHandler = true
 	}
 }
 
 func WithSlogUseMixedHandler() SlogLoggerOption {
 	return func(c *slogLoggerConfig) {
-		c.UseMixedHandler = true
+		c.useMixedHandler = true
 	}
 }
 
-func WithSlogUseColor() SlogLoggerOption {
+func WithSlogUseAnsiColor() SlogLoggerOption {
 	return func(c *slogLoggerConfig) {
-		c.UseColor = true
+		c.useAnsiColor = true
 	}
 }
 
 func WithSlogOnlyMessage() SlogLoggerOption {
 	return func(c *slogLoggerConfig) {
-		c.OnlyMessage = true
+		c.onlyMessage = true
 	}
 }
 
@@ -221,13 +221,13 @@ func WithSlogHandler(h slog.Handler) SlogLoggerOption {
 
 func WithSlogLevel(level slog.Level) SlogLoggerOption {
 	return func(c *slogLoggerConfig) {
-		c.Level = level
+		c.level = level
 	}
 }
 
 func WithSlogCallerLevel(level int) SlogLoggerOption {
 	return func(c *slogLoggerConfig) {
-		c.CallerLevel = slog.Level(level)
+		c.callerLevel = slog.Level(level)
 	}
 }
 
@@ -249,19 +249,23 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 	logMaxAge := slibos.GetEnvDefault("LOG_MAX_AGE", DefaultLogMaxAge)
 
 	config := &slogLoggerConfig{
-		CallerLevel: slog.LevelWarn,
+		callerLevel: slog.LevelWarn,
 	}
 
 	for _, opt := range opts {
 		opt(config)
 	}
 
+	if os.Getppid() == 1 {
+		config.onlyMessage = true
+	}
+
 	if isAnsiColor {
-		config.UseColor = true
+		config.useAnsiColor = true
 	}
 
 	if logLevel == "" {
-		logLevel = config.Level.String()
+		logLevel = config.level.String()
 	}
 
 	// 设置日志级别
@@ -288,7 +292,7 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 
 	if config.Handler != nil {
 		handler = config.Handler
-	} else if config.UseMixedHandler {
+	} else if config.useMixedHandler {
 		consoleHandler := &textOnlyHandler{w: os.Stdout, level: level, cfg: config}
 		fileWriter := &lumberjack.Logger{
 			Filename:   logFile,
@@ -302,7 +306,7 @@ func NewSlogLogger(opts ...SlogLoggerOption) Logger {
 		handler = &mixedHandler{
 			handlers: []slog.Handler{consoleHandler, jsonHandler},
 		}
-	} else if config.UseTextHandler {
+	} else if config.useTextHandler {
 		if logFile != "" {
 			fileWriter := &lumberjack.Logger{
 				Filename:   logFile,
