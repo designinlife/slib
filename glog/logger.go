@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mattn/go-isatty"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/term"
 )
 
 // Logger 标准日志接口。
@@ -56,7 +56,7 @@ func rightPad(str string, size int, padChar rune) string {
 }
 
 func colorizeSlog(level slog.Level, str string) string {
-	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		return str
 	}
 
@@ -73,7 +73,7 @@ func colorizeSlog(level slog.Level, str string) string {
 }
 
 func colorizeZaplog(level zapcore.Level, str string) string {
-	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		return str
 	}
 

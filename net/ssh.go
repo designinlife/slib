@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/proxy"
+	"golang.org/x/term"
 
 	"github.com/designinlife/slib/errors"
 	"github.com/designinlife/slib/glog"
@@ -460,7 +460,7 @@ func (s *SSHClient) Upload(src, dst string) error {
 
 	buf := make([]byte, s.ChunkSize)
 
-	isTty := isatty.IsTerminal(os.Stdout.Fd())
+	isTty := term.IsTerminal(int(os.Stdout.Fd()))
 
 	for {
 		n, err1 := srcFile.Read(buf)
@@ -548,7 +548,7 @@ func (s *SSHClient) Download(src, dst string) error {
 
 	buf := make([]byte, s.ChunkSize)
 
-	isTty := isatty.IsTerminal(os.Stdout.Fd())
+	isTty := term.IsTerminal(int(os.Stdout.Fd()))
 
 	for {
 		n, err1 := srcFile.Read(buf)

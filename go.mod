@@ -3,7 +3,6 @@ module github.com/designinlife/slib
 go 1.24
 
 require (
-	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/sftp v1.13.9
 	github.com/spf13/cast v1.9.2
