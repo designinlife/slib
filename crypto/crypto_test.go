@@ -17,6 +17,16 @@ func TestMD5String(t *testing.T) {
 	assert.Equal(t, "5d41402abc4b2a76b9719d911017c592", s)
 }
 
+func TestSHA1String(t *testing.T) {
+	s := crypto.SHA1String("hello")
+	assert.Equal(t, "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d", s)
+}
+
+func TestSHA256String(t *testing.T) {
+	s := crypto.SHA256String("hello")
+	assert.Equal(t, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", s)
+}
+
 func TestAES256Encrypt(t *testing.T) {
 	v1, err := crypto.AES256Encrypt("hello", []byte("1234567890123456"))
 	assert.NoError(t, err)
