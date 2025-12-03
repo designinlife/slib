@@ -17,6 +17,7 @@ import (
 
 type CommandOption struct {
 	Quiet         bool
+	Dir           string
 	Env           []string
 	LineHandler   func(line string) error
 	CaptureStderr bool
@@ -30,6 +31,10 @@ type CommandResult struct {
 
 func Run(ctx context.Context, commands []string, option *CommandOption) (*CommandResult, error) {
 	cmd := exec.CommandContext(ctx, CommandName, CrossbarArg, strings.Join(commands, " && "))
+
+	if option.Dir != "" {
+		cmd.Dir = option.Dir
+	}
 
 	if len(option.Env) > 0 {
 		cmd.Env = append(os.Environ(), option.Env...)
